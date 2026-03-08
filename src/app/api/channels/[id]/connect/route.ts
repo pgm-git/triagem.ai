@@ -1,7 +1,10 @@
 // API Route: /api/channels/[id]/connect
 // Initiates connection for a WhatsApp instance
+// UazAPI: generates QR Code | Meta: validates token
 
 import { NextRequest, NextResponse } from 'next/server';
+import { UazAPIProvider } from '@/lib/whatsapp/uazapi-provider';
+import { MetaCloudProvider } from '@/lib/whatsapp/meta-provider';
 
 export async function POST(
     request: NextRequest,
@@ -10,39 +13,86 @@ export async function POST(
     const { id } = await params;
 
     try {
-        // TODO: Fetch instance from Supabase by ID
-        // const instance = await supabase.from('whatsapp_instances').select().eq('id', id).single();
+        // TODO: Fetch instance from Supabase
+        // const { data: instance } = await supabase
+        //   .from('whatsapp_instances')
+        //   .select()
+        //   .eq('id', id)
+        //   .single();
+        // if (!instance) return NextResponse.json({ error: 'Instance not found' }, { status: 404 });
 
-        // Simulated response for development
-        const mockProvider = 'uazapi'; // Would come from DB
+        // Simulated instance for dev — will come from DB
+        const instance = {
+            id,
+            provider: 'uazapi' as const,
+            uazapi_token: '',  // Would come from DB
+            uazapi_url: process.env.UAZAPI_BASE_URL || '',
+            meta_access_token: '',
+            meta_phone_number_id: '',
+        };
 
-        if (mockProvider === 'uazapi') {
-            // UazAPI flow: call /instance/connect to get QR code
-            // const provider = new UazAPIProvider({ baseUrl: instance.uazapi_url, instanceToken: instance.uazapi_token });
-            // const result = await provider.connect();
+        // ── UazAPI: Generate QR Code ──────────────────────
+        if (instance.provider === 'uazapi') {
+            if (!instance.uazapi_token || !instance.uazapi_url) {
+                return NextResponse.json(
+                    { error: 'Instância UazAPI não configurada corretamente.' },
+                    { status: 400 }
+                );
+            }
+
+            const provider = new UazAPIProvider({
+                baseUrl: instance.uazapi_url,
+                instanceToken: instance.uazapi_token,
+            });
+
+            const result = await provider.connect();
+
+            if (!result.success) {
+                return NextResponse.json(
+                    { error: result.error || 'Falha ao gerar QR Code.' },
+                    { status: 502 }
+                );
+            }
+
+            // TODO: Update status in DB
+            // await supabase.from('whatsapp_instances').update({ status: 'qr_pending' }).eq('id', id);
 
             return NextResponse.json({
                 success: true,
                 provider: 'uazapi',
-                qrCode: null, // Would be base64 QR code from UazAPI
+                qrCode: result.qrCode,
+                pairingCode: result.pairingCode,
                 message: 'Escaneie o QR Code com seu WhatsApp',
             });
         }
 
-        if (mockProvider === 'meta_cloud') {
-            // Meta flow: validate token by fetching phone number details
-            // const provider = new MetaCloudProvider({ accessToken: instance.meta_access_token, phoneNumberId: instance.meta_phone_number_id });
-            // const result = await provider.connect();
+        // ── Meta Cloud: Validate Token ───────────────────
+        if (instance.provider === 'meta_cloud') {
+            const provider = new MetaCloudProvider({
+                accessToken: instance.meta_access_token,
+                phoneNumberId: instance.meta_phone_number_id,
+            });
+
+            const result = await provider.connect();
+
+            if (!result.success) {
+                return NextResponse.json(
+                    { error: result.error || 'Token inválido.' },
+                    { status: 400 }
+                );
+            }
+
+            // TODO: Update status in DB
+            // await supabase.from('whatsapp_instances').update({ status: 'connected' }).eq('id', id);
 
             return NextResponse.json({
                 success: true,
                 provider: 'meta_cloud',
-                verifiedName: 'Empresa Demo',
                 message: 'Token validado com sucesso',
             });
         }
 
-        return NextResponse.json({ error: `Instance ${id} not found` }, { status: 404 });
+        return NextResponse.json({ error: 'Provider desconhecido' }, { status: 400 });
     } catch (error) {
         console.error(`[Channel Connect] Error for ${id}:`, error);
         return NextResponse.json({ error: 'Internal error' }, { status: 500 });

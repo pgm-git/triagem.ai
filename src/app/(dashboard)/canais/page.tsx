@@ -104,9 +104,6 @@ export default function CanaisPage() {
 
     // ── Form state ────────────────────────────
     const [formName, setFormName] = useState('');
-    // UazAPI
-    const [uazapiUrl, setUazapiUrl] = useState('');
-    const [uazapiAdminToken, setUazapiAdminToken] = useState('');
     // Meta
     const [metaAccessToken, setMetaAccessToken] = useState('');
     const [metaPhoneNumberId, setMetaPhoneNumberId] = useState('');
@@ -119,8 +116,6 @@ export default function CanaisPage() {
         setSelectedProvider(null);
         setConnectStep('select');
         setFormName('');
-        setUazapiUrl('');
-        setUazapiAdminToken('');
         setMetaAccessToken('');
         setMetaPhoneNumberId('');
         setMetaBusinessId('');
@@ -135,24 +130,46 @@ export default function CanaisPage() {
         setIsSubmitting(true);
         setConnectStep('connecting');
 
-        // Simulate connection
-        await new Promise((r) => setTimeout(r, 2500));
+        try {
+            const payload: Record<string, string> = {
+                provider: selectedProvider!,
+                instance_name: formName || (selectedProvider === 'uazapi' ? 'Atendimento' : 'WhatsApp Business'),
+            };
 
-        const newInstance: WhatsAppInstance = {
-            id: crypto.randomUUID(),
-            organization_id: 'org-1',
-            instance_name: formName || (selectedProvider === 'uazapi' ? 'UazAPI' : 'WhatsApp Business'),
-            provider: selectedProvider!,
-            uazapi_url: selectedProvider === 'uazapi' ? uazapiUrl : undefined,
-            meta_phone_number_id: selectedProvider === 'meta_cloud' ? metaPhoneNumberId : undefined,
-            phone_number: selectedProvider === 'meta_cloud' ? '' : undefined,
-            status: selectedProvider === 'uazapi' ? 'qr_pending' : 'connected',
-            webhook_secret: crypto.randomUUID(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-        };
+            if (selectedProvider === 'meta_cloud') {
+                payload.access_token = metaAccessToken;
+                payload.phone_number_id = metaPhoneNumberId;
+                payload.business_account_id = metaBusinessId;
+            }
 
-        setInstances((prev) => [...prev, newInstance]);
+            const res = await fetch('/api/channels', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                console.error('Create error:', data.error);
+                // TODO: show error toast
+            } else {
+                const inst = data.instance;
+                setInstances((prev) => [...prev, {
+                    id: inst.id,
+                    organization_id: 'org-1',
+                    instance_name: inst.instance_name,
+                    provider: inst.provider,
+                    phone_number: inst.phone_number,
+                    status: inst.status,
+                    webhook_secret: '',
+                    created_at: inst.created_at,
+                    updated_at: inst.created_at,
+                }]);
+            }
+        } catch (err) {
+            console.error('Create failed:', err);
+        }
+
         setIsSubmitting(false);
         setShowNewDrawer(false);
     };
@@ -401,27 +418,16 @@ export default function CanaisPage() {
                                         />
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-zinc-300">URL base da UazAPI</label>
-                                        <input
-                                            type="url"
-                                            value={uazapiUrl}
-                                            onChange={(e) => setUazapiUrl(e.target.value)}
-                                            placeholder="https://seu-servidor.uazapi.com"
-                                            className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-zinc-300">Admin Token</label>
-                                        <input
-                                            type="password"
-                                            value={uazapiAdminToken}
-                                            onChange={(e) => setUazapiAdminToken(e.target.value)}
-                                            placeholder="Seu admin token da UazAPI"
-                                            className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
-                                        />
-                                        <p className="text-[10px] text-zinc-600">Token de administrador para criar instâncias. Encontre no painel da UazAPI.</p>
+                                    <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3.5">
+                                        <div className="flex items-start gap-2">
+                                            <Shield className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                                            <div>
+                                                <p className="text-xs font-medium text-emerald-300">Configuração automática</p>
+                                                <p className="text-[11px] text-emerald-200/60 mt-0.5">
+                                                    A instância será criada automaticamente no servidor. Você não precisa configurar nada manualmente.
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3.5">
@@ -591,7 +597,6 @@ export default function CanaisPage() {
                                     onClick={handleSubmit}
                                     disabled={
                                         isSubmitting ||
-                                        (selectedProvider === 'uazapi' && (!uazapiUrl || !uazapiAdminToken)) ||
                                         (selectedProvider === 'meta_cloud' && (!metaAccessToken || !metaPhoneNumberId))
                                     }
                                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-zinc-600 rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed"
