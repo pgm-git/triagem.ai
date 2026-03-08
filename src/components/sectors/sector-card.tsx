@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import type { Sector } from '@/types';
-import { Building2, Clock, MoreVertical, Pencil, Tag, Trash2, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { Building2, Clock, MoreVertical, Pencil, Tag, Trash2, ArrowRight, ChevronDown, ChevronUp, ClipboardList } from 'lucide-react';
 import { useState } from 'react';
 
 interface SectorCardProps {
@@ -127,6 +127,12 @@ export function SectorCard({ sector, onEdit, onToggle, onDelete }: SectorCardPro
                     <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-zinc-800 text-zinc-400 rounded-full">
                         <Clock className="w-3 h-3" />
                         {sector.schedule_start} — {sector.schedule_end}
+                    </span>
+                )}
+                {(sector.collection_fields?.length ?? 0) > 0 && (
+                    <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-emerald-500/10 text-emerald-400 rounded-full border border-emerald-500/20">
+                        <ClipboardList className="w-3 h-3" />
+                        {sector.collection_fields!.length} campo{sector.collection_fields!.length !== 1 ? 's' : ''}
                     </span>
                 )}
                 {keywords.length > 4 && (

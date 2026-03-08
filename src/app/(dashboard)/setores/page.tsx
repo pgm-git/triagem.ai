@@ -17,6 +17,11 @@ const mockSectors: Sector[] = [
         id: '2', organization_id: 'org-1', name: 'Comercial', icon: '🤝',
         destination: '+55 11 99999-0002', is_active: true, is_fallback: false, priority: 1,
         triggers: [{ keywords: ['preço', 'orçamento', 'cotação', 'proposta', 'comprar'], response_template: 'Encaminhando para o Comercial. Em breve um consultor irá atendê-lo.', type: 'keyword', is_active: true }],
+        collection_fields: [
+            { id: 'cf-1', variable: 'placa', label: 'Placa do veículo', context: 'Placa no formato ABC-1234 ou ABC1D23', required: true },
+            { id: 'cf-2', variable: 'cep', label: 'CEP', context: 'CEP com 8 dígitos, formato 00000-000', required: true },
+            { id: 'cf-3', variable: 'modelo', label: 'Modelo do veículo', context: 'Nome, ano e modelo do veículo. Ex: Fiat Uno 2020', required: false },
+        ],
         created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     },
     {

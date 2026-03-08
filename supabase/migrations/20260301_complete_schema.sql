@@ -149,6 +149,7 @@ CREATE TABLE sectors (
   is_active       BOOLEAN DEFAULT true,
   is_fallback     BOOLEAN DEFAULT false,
   priority        INT DEFAULT 0,
+  collection_fields JSONB DEFAULT '[]',
   schedule_start  TIME,
   schedule_end    TIME,
   created_at      TIMESTAMPTZ DEFAULT now(),

@@ -1,8 +1,8 @@
 'use client';
 
-import type { Sector, SectorTrigger } from '@/types';
+import type { Sector, SectorTrigger, CollectionField } from '@/types';
 import { useState, useEffect } from 'react';
-import { X, Plus, Tag, Settings2 } from 'lucide-react';
+import { X, Plus, Tag, Settings2, ClipboardList, Trash2, GripVertical, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SectorDrawerProps {
@@ -12,7 +12,7 @@ interface SectorDrawerProps {
     onSave: (sector: Partial<Sector>) => void;
 }
 
-type TabId = 'dados' | 'gatilhos';
+type TabId = 'dados' | 'gatilhos' | 'coleta';
 
 export function SectorDrawer({ open, sector, onClose, onSave }: SectorDrawerProps) {
     const [activeTab, setActiveTab] = useState<TabId>('dados');
@@ -27,6 +27,7 @@ export function SectorDrawer({ open, sector, onClose, onSave }: SectorDrawerProp
         schedule_start: '',
         schedule_end: '',
         triggers: [],
+        collection_fields: [],
     });
 
     const [newKeyword, setNewKeyword] = useState('');
@@ -40,6 +41,7 @@ export function SectorDrawer({ open, sector, onClose, onSave }: SectorDrawerProp
                 is_fallback: false, fallback_message: '', priority: 0,
                 schedule_start: '', schedule_end: '',
                 triggers: [{ keywords: [], response_template: '', type: 'keyword', is_active: true }],
+                collection_fields: [],
             });
         }
         setActiveTab('dados');
@@ -82,9 +84,48 @@ export function SectorDrawer({ open, sector, onClose, onSave }: SectorDrawerProp
         onSave(form);
     };
 
+    // ── Collection fields helpers ────────────────
+    const collectionFields = form.collection_fields || [];
+
+    const addCollectionField = () => {
+        const newField: CollectionField = {
+            id: crypto.randomUUID(),
+            variable: '',
+            label: '',
+            context: '',
+            required: true,
+        };
+        setForm((prev) => ({ ...prev, collection_fields: [...(prev.collection_fields || []), newField] }));
+    };
+
+    const updateCollectionField = (id: string, updates: Partial<CollectionField>) => {
+        setForm((prev) => ({
+            ...prev,
+            collection_fields: (prev.collection_fields || []).map((f) =>
+                f.id === id ? { ...f, ...updates } : f
+            ),
+        }));
+    };
+
+    const removeCollectionField = (id: string) => {
+        setForm((prev) => ({
+            ...prev,
+            collection_fields: (prev.collection_fields || []).filter((f) => f.id !== id),
+        }));
+    };
+
+    const formatVariable = (value: string) => {
+        return value
+            .toLowerCase()
+            .replace(/\s+/g, '_')
+            .replace(/[^a-z0-9_]/g, '')
+            .slice(0, 30);
+    };
+
     const tabs: { id: TabId; label: string; icon: typeof Settings2 }[] = [
         { id: 'dados', label: 'Dados', icon: Settings2 },
         { id: 'gatilhos', label: 'Gatilhos', icon: Tag },
+        { id: 'coleta', label: 'Coleta', icon: ClipboardList },
     ];
 
     return (
@@ -124,6 +165,11 @@ export function SectorDrawer({ open, sector, onClose, onSave }: SectorDrawerProp
                                 {tab.id === 'gatilhos' && trigger.keywords.length > 0 && (
                                     <span className="w-5 h-5 flex items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400 text-[10px] font-bold">
                                         {trigger.keywords.length}
+                                    </span>
+                                )}
+                                {tab.id === 'coleta' && collectionFields.length > 0 && (
+                                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">
+                                        {collectionFields.length}
                                     </span>
                                 )}
                             </button>
@@ -230,7 +276,7 @@ export function SectorDrawer({ open, sector, onClose, onSave }: SectorDrawerProp
                                 </div>
                             )}
                         </div>
-                    ) : (
+                    ) : activeTab === 'gatilhos' ? (
                         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-200">
                             {/* Keywords */}
                             <div className="space-y-3">
@@ -316,6 +362,115 @@ export function SectorDrawer({ open, sector, onClose, onSave }: SectorDrawerProp
                                         </div>
                                     </div>
                                 </div>
+                            )}
+                        </div>
+                    ) : (
+                        /* ── Coleta Tab ─────────────── */
+                        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-200">
+                            {/* Info banner */}
+                            <div className="flex items-start gap-3 p-3.5 bg-indigo-500/5 border border-indigo-500/20 rounded-xl">
+                                <Info className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+                                <p className="text-xs text-indigo-200/70">
+                                    Campos que o agente IA deve coletar <strong>antes</strong> de transferir o cliente para este setor.
+                                    Adicione variável, rótulo amigável e contexto para orientar a coleta.
+                                </p>
+                            </div>
+
+                            {/* Fields list */}
+                            {collectionFields.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-10 text-center">
+                                    <div className="w-12 h-12 rounded-xl bg-zinc-800 flex items-center justify-center mb-3">
+                                        <ClipboardList className="w-6 h-6 text-zinc-600" />
+                                    </div>
+                                    <p className="text-sm text-zinc-400">Nenhum campo configurado</p>
+                                    <p className="text-xs text-zinc-600 mt-1">Campos de coleta são opcionais</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {collectionFields.map((field, index) => (
+                                        <div
+                                            key={field.id}
+                                            className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200"
+                                            style={{ animationDelay: `${index * 50}ms` }}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <GripVertical className="w-3.5 h-3.5 text-zinc-600" />
+                                                    <span className="text-xs font-mono text-zinc-500">#{index + 1}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updateCollectionField(field.id, { required: !field.required })}
+                                                        className={cn(
+                                                            'px-2 py-1 text-[10px] font-medium rounded-md transition-all cursor-pointer',
+                                                            field.required
+                                                                ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                                                : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+                                                        )}
+                                                    >
+                                                        {field.required ? 'Obrigatório' : 'Opcional'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => removeCollectionField(field.id)}
+                                                        className="p-1 text-zinc-600 hover:text-red-400 transition-colors cursor-pointer"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Variável</label>
+                                                    <input
+                                                        type="text"
+                                                        value={field.variable}
+                                                        onChange={(e) => updateCollectionField(field.id, { variable: formatVariable(e.target.value) })}
+                                                        placeholder="ex: placa"
+                                                        className="w-full px-2.5 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-xs font-mono placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Rótulo</label>
+                                                    <input
+                                                        type="text"
+                                                        value={field.label}
+                                                        onChange={(e) => updateCollectionField(field.id, { label: e.target.value })}
+                                                        placeholder="ex: Placa do veículo"
+                                                        className="w-full px-2.5 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Contexto para o agente IA</label>
+                                                <textarea
+                                                    value={field.context}
+                                                    onChange={(e) => updateCollectionField(field.id, { context: e.target.value })}
+                                                    rows={2}
+                                                    placeholder="Explique o que o agente precisa coletar. Ex: Placa no formato ABC-1234 ou ABC1D23"
+                                                    className="w-full px-2.5 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all resize-none"
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Add button */}
+                            <button
+                                onClick={addCollectionField}
+                                className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-zinc-700 rounded-xl text-sm text-zinc-400 hover:text-emerald-400 hover:border-emerald-500/30 transition-all cursor-pointer"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Adicionar campo
+                            </button>
+
+                            {collectionFields.length > 0 && (
+                                <p className="text-center text-[10px] text-zinc-600">
+                                    {collectionFields.filter((f) => f.required).length} obrigatório{collectionFields.filter((f) => f.required).length !== 1 ? 's' : ''} · {collectionFields.filter((f) => !f.required).length} opcion{collectionFields.filter((f) => !f.required).length !== 1 ? 'ais' : 'al'}
+                                </p>
                             )}
                         </div>
                     )}

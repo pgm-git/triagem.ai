@@ -34,6 +34,14 @@ export interface SectorTrigger {
   is_active: boolean;
 }
 
+export interface CollectionField {
+  id: string;
+  variable: string;    // ex: "placa"
+  label: string;       // ex: "Placa do veículo"
+  context: string;     // instrução para o agente IA coletar
+  required: boolean;
+}
+
 export interface Sector {
   id: string;
   organization_id: string;
@@ -47,6 +55,7 @@ export interface Sector {
   fallback_message?: string;
   priority: number;
   triggers?: SectorTrigger[];
+  collection_fields?: CollectionField[];
   created_at: string;
   updated_at: string;
 }
