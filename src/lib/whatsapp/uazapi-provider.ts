@@ -22,6 +22,17 @@ export class UazAPIProvider implements IWhatsAppProvider {
         this.token = config.instanceToken;
     }
 
+    /** Safe JSON parse — returns null if response is not valid JSON */
+    private static async safeJson(res: Response): Promise<Record<string, unknown> | null> {
+        const text = await res.text();
+        try {
+            return JSON.parse(text);
+        } catch {
+            console.error(`[UazAPI] Non-JSON response (${res.status}): ${text.substring(0, 200)}`);
+            return null;
+        }
+    }
+
     /**
      * Create a new instance (requires adminToken, not instanceToken)
      * POST /instance/init
@@ -31,7 +42,10 @@ export class UazAPIProvider implements IWhatsAppProvider {
         name: string
     ): Promise<{ token: string; error?: string }> {
         try {
-            const res = await fetch(`${config.baseUrl}/instance/init`, {
+            const url = `${config.baseUrl}/instance/init`;
+            console.log(`[UazAPI] Creating instance at: ${url}`);
+
+            const res = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -42,11 +56,15 @@ export class UazAPIProvider implements IWhatsAppProvider {
                     systemName: 'TrackerAiPro',
                 }),
             });
-            const data = await res.json();
-            if (!res.ok) return { token: '', error: data.message || 'Falha ao criar instância' };
-            return { token: data.token || data.instanceToken || '' };
+
+            const data = await UazAPIProvider.safeJson(res);
+            if (!data) {
+                return { token: '', error: `UazAPI retornou resposta inválida (status ${res.status}). Verifique UAZAPI_BASE_URL.` };
+            }
+            if (!res.ok) return { token: '', error: (data.message as string) || `Erro ${res.status}` };
+            return { token: (data.token || data.instanceToken || '') as string };
         } catch (err) {
-            return { token: '', error: (err as Error).message };
+            return { token: '', error: `Conexão falhou: ${(err as Error).message}` };
         }
     }
 
@@ -60,12 +78,13 @@ export class UazAPIProvider implements IWhatsAppProvider {
                     'token': this.token,
                 },
             });
-            const data = await res.json();
-            if (!res.ok) return { success: false, error: data.message || 'Falha ao conectar' };
+            const data = await UazAPIProvider.safeJson(res);
+            if (!data) return { success: false, error: `Resposta inválida (status ${res.status})` };
+            if (!res.ok) return { success: false, error: (data.message as string) || 'Falha ao conectar' };
             return {
                 success: true,
-                qrCode: data.qrcode || data.qrCode || undefined,
-                pairingCode: data.pairingCode || undefined,
+                qrCode: (data.qrcode || data.qrCode || undefined) as string | undefined,
+                pairingCode: (data.pairingCode || undefined) as string | undefined,
             };
         } catch (err) {
             return { success: false, error: (err as Error).message };

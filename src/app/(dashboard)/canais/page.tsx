@@ -110,6 +110,7 @@ export default function CanaisPage() {
     const [metaBusinessId, setMetaBusinessId] = useState('');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     const openDrawer = () => {
         setShowNewDrawer(true);
@@ -128,6 +129,7 @@ export default function CanaisPage() {
 
     const handleSubmit = async () => {
         setIsSubmitting(true);
+        setSubmitError(null);
         setConnectStep('connecting');
 
         try {
@@ -150,28 +152,29 @@ export default function CanaisPage() {
             const data = await res.json();
 
             if (!res.ok) {
-                console.error('Create error:', data.error);
-                // TODO: show error toast
-            } else {
-                const inst = data.instance;
-                setInstances((prev) => [...prev, {
-                    id: inst.id,
-                    organization_id: 'org-1',
-                    instance_name: inst.instance_name,
-                    provider: inst.provider,
-                    phone_number: inst.phone_number,
-                    status: inst.status,
-                    webhook_secret: '',
-                    created_at: inst.created_at,
-                    updated_at: inst.created_at,
-                }]);
+                setSubmitError(data.error || 'Erro ao criar instância.');
+                setIsSubmitting(false);
+                return; // Keep drawer open
             }
+
+            const inst = data.instance;
+            setInstances((prev) => [...prev, {
+                id: inst.id,
+                organization_id: 'org-1',
+                instance_name: inst.instance_name,
+                provider: inst.provider,
+                phone_number: inst.phone_number,
+                status: inst.status,
+                webhook_secret: '',
+                created_at: inst.created_at,
+                updated_at: inst.created_at,
+            }]);
+            setShowNewDrawer(false);
         } catch (err) {
-            console.error('Create failed:', err);
+            setSubmitError(`Falha de conexão: ${(err as Error).message}`);
         }
 
         setIsSubmitting(false);
-        setShowNewDrawer(false);
     };
 
     return (
@@ -533,7 +536,25 @@ export default function CanaisPage() {
                             {/* ─── Step 3: Connecting ─── */}
                             {connectStep === 'connecting' && (
                                 <div className="flex flex-col items-center justify-center py-16 animate-in fade-in zoom-in-95 duration-300">
-                                    {selectedProvider === 'uazapi' ? (
+                                    {/* Error state */}
+                                    {submitError ? (
+                                        <>
+                                            <div className="w-20 h-20 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6">
+                                                <AlertCircle className="w-10 h-10 text-red-400" />
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-white mb-1">Erro na conexão</h3>
+                                            <p className="text-sm text-red-400 text-center max-w-xs bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 mt-2">
+                                                {submitError}
+                                            </p>
+                                            <button
+                                                onClick={() => { setSubmitError(null); setConnectStep('form'); }}
+                                                className="mt-4 flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-lg transition-all cursor-pointer"
+                                            >
+                                                <RefreshCw className="w-4 h-4" />
+                                                Tentar novamente
+                                            </button>
+                                        </>
+                                    ) : selectedProvider === 'uazapi' ? (
                                         <>
                                             <div className="w-48 h-48 bg-zinc-800 border-2 border-dashed border-zinc-600 rounded-2xl flex items-center justify-center mb-6">
                                                 <div className="text-center">
