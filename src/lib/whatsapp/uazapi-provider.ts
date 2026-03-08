@@ -62,7 +62,12 @@ export class UazAPIProvider implements IWhatsAppProvider {
                 return { token: '', error: `UazAPI retornou resposta inválida (status ${res.status}). Verifique UAZAPI_BASE_URL.` };
             }
             if (!res.ok) return { token: '', error: (data.message as string) || `Erro ${res.status}` };
-            return { token: (data.token || data.instanceToken || '') as string };
+
+            // UazAPI returns: { instance: { token, qrcode, ... } }
+            const inst = data.instance as Record<string, unknown> | undefined;
+            const token = (inst?.token || data.token || data.instanceToken || '') as string;
+            console.log(`[UazAPI] Init response — token: ${token ? token.substring(0, 8) + '...' : 'EMPTY'}`);
+            return { token };
         } catch (err) {
             return { token: '', error: `Conexão falhou: ${(err as Error).message}` };
         }
@@ -81,10 +86,16 @@ export class UazAPIProvider implements IWhatsAppProvider {
             const data = await UazAPIProvider.safeJson(res);
             if (!data) return { success: false, error: `Resposta inválida (status ${res.status})` };
             if (!res.ok) return { success: false, error: (data.message as string) || 'Falha ao conectar' };
+
+            // UazAPI returns: { connected, instance: { qrcode, paircode, ... } }
+            const inst = data.instance as Record<string, unknown> | undefined;
+            const qrCode = (inst?.qrcode || inst?.qrCode || data.qrcode || data.qrCode) as string | undefined;
+            const pairingCode = (inst?.paircode || inst?.pairingCode || data.pairingCode) as string | undefined;
+            console.log(`[UazAPI] Connect response — qrCode: ${qrCode ? qrCode.substring(0, 30) + '...' : 'EMPTY'}`);
             return {
                 success: true,
-                qrCode: (data.qrcode || data.qrCode || undefined) as string | undefined,
-                pairingCode: (data.pairingCode || undefined) as string | undefined,
+                qrCode: qrCode || undefined,
+                pairingCode: pairingCode || undefined,
             };
         } catch (err) {
             return { success: false, error: (err as Error).message };

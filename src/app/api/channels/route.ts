@@ -56,7 +56,6 @@ export async function POST(request: NextRequest) {
             const instanceToken = initResult.token;
 
             // Step 2: Configure webhook for this instance
-            // The webhook URL includes a unique ID so each client has their own endpoint
             const instanceId = crypto.randomUUID();
             const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://seu-dominio.com';
             const webhookUrl = `${appUrl}/api/webhooks/whatsapp/${instanceId}`;
@@ -69,20 +68,24 @@ export async function POST(request: NextRequest) {
             const webhookResult = await uazProvider.configureWebhook(webhookUrl);
             if (!webhookResult.success) {
                 console.warn(`[Channels] Webhook config warning: ${webhookResult.error}`);
-                // Don't fail — client can reconfigure later
             }
 
-            // Step 3: Save to database
+            // Step 3: Call connect() to generate QR Code
+            console.log(`[Channels] Calling connect() to generate QR Code...`);
+            const connectResult = await uazProvider.connect();
+            console.log(`[Channels] Connect result:`, JSON.stringify(connectResult).substring(0, 200));
+
+            // Step 4: Save to database
             // TODO: Replace with real Supabase insert
             // await supabase.from('whatsapp_instances').insert({
             //   id: instanceId,
             //   organization_id: orgId,
             //   instance_name: instanceName,
             //   provider: 'uazapi',
-            //   uazapi_token: instanceToken,  ← saved per-client
+            //   uazapi_token: instanceToken,
             //   uazapi_url: baseUrl,
-            //   status: 'disconnected',
-            //   webhook_secret: webhookSecret,
+            //   status: 'qr_pending',
+            //   webhook_secret: crypto.randomUUID(),
             // });
 
             const newInstance = {
@@ -90,9 +93,11 @@ export async function POST(request: NextRequest) {
                 instance_name: instanceName,
                 provider: 'uazapi' as const,
                 uazapi_url: baseUrl,
-                status: 'disconnected' as const,
+                status: (connectResult.qrCode ? 'qr_pending' : 'disconnected') as 'qr_pending' | 'disconnected',
                 webhook_url: webhookUrl,
                 created_at: new Date().toISOString(),
+                qrCode: connectResult.qrCode || null,
+                pairingCode: connectResult.pairingCode || null,
             };
 
             return NextResponse.json({ instance: newInstance }, { status: 201 });

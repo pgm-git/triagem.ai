@@ -111,6 +111,7 @@ export default function CanaisPage() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [qrCodeData, setQrCodeData] = useState<string | null>(null);
 
     const openDrawer = () => {
         setShowNewDrawer(true);
@@ -130,6 +131,7 @@ export default function CanaisPage() {
     const handleSubmit = async () => {
         setIsSubmitting(true);
         setSubmitError(null);
+        setQrCodeData(null);
         setConnectStep('connecting');
 
         try {
@@ -154,7 +156,7 @@ export default function CanaisPage() {
             if (!res.ok) {
                 setSubmitError(data.error || 'Erro ao criar instância.');
                 setIsSubmitting(false);
-                return; // Keep drawer open
+                return;
             }
 
             const inst = data.instance;
@@ -169,7 +171,16 @@ export default function CanaisPage() {
                 created_at: inst.created_at,
                 updated_at: inst.created_at,
             }]);
-            setShowNewDrawer(false);
+
+            // UazAPI: store QR code and keep drawer open
+            if (inst.qrCode) {
+                setQrCodeData(inst.qrCode);
+            }
+
+            // Meta: close drawer immediately (already connected via token)
+            if (selectedProvider === 'meta_cloud') {
+                setShowNewDrawer(false);
+            }
         } catch (err) {
             setSubmitError(`Falha de conexão: ${(err as Error).message}`);
         }
@@ -556,20 +567,42 @@ export default function CanaisPage() {
                                         </>
                                     ) : selectedProvider === 'uazapi' ? (
                                         <>
-                                            <div className="w-48 h-48 bg-zinc-800 border-2 border-dashed border-zinc-600 rounded-2xl flex items-center justify-center mb-6">
-                                                <div className="text-center">
-                                                    <QrCode className="w-16 h-16 text-zinc-500 mx-auto mb-2" />
-                                                    <p className="text-xs text-zinc-500">QR Code aqui</p>
-                                                </div>
-                                            </div>
-                                            <h3 className="text-lg font-semibold text-white mb-1">Escaneie o QR Code</h3>
-                                            <p className="text-sm text-zinc-400 text-center max-w-xs">
-                                                Abra o WhatsApp no celular → Configurações → Aparelhos conectados → Conectar aparelho
-                                            </p>
-                                            <div className="flex items-center gap-2 mt-4">
-                                                <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
-                                                <span className="text-xs text-indigo-400">Aguardando conexão...</span>
-                                            </div>
+                                            {isSubmitting ? (
+                                                <>
+                                                    <Loader2 className="w-16 h-16 text-indigo-400 animate-spin mb-6" />
+                                                    <h3 className="text-lg font-semibold text-white mb-1">Criando instância...</h3>
+                                                    <p className="text-sm text-zinc-400">Gerando QR Code na UazAPI</p>
+                                                </>
+                                            ) : qrCodeData ? (
+                                                <>
+                                                    <div className="w-56 h-56 bg-white rounded-2xl flex items-center justify-center mb-6 p-2">
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img
+                                                            src={qrCodeData.startsWith('data:') ? qrCodeData : `data:image/png;base64,${qrCodeData}`}
+                                                            alt="QR Code WhatsApp"
+                                                            className="w-full h-full object-contain"
+                                                        />
+                                                    </div>
+                                                    <h3 className="text-lg font-semibold text-white mb-1">Escaneie o QR Code</h3>
+                                                    <p className="text-sm text-zinc-400 text-center max-w-xs">
+                                                        Abra o WhatsApp no celular → Configurações → Aparelhos conectados → Conectar aparelho
+                                                    </p>
+                                                    <div className="flex items-center gap-2 mt-4">
+                                                        <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
+                                                        <span className="text-xs text-indigo-400">Aguardando conexão...</span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div className="w-20 h-20 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-6">
+                                                        <AlertCircle className="w-10 h-10 text-amber-400" />
+                                                    </div>
+                                                    <h3 className="text-lg font-semibold text-white mb-1">Instância criada</h3>
+                                                    <p className="text-sm text-zinc-400 text-center max-w-xs">
+                                                        Instância criada mas QR Code não foi retornado. Clique em &quot;QR Code&quot; no card da instância.
+                                                    </p>
+                                                </>
+                                            )}
                                         </>
                                     ) : (
                                         <>
