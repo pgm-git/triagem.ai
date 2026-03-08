@@ -120,11 +120,25 @@ CREATE TABLE whatsapp_instances (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   instance_name   TEXT DEFAULT 'Principal',
-  uazapi_token    TEXT NOT NULL,
-  uazapi_url      TEXT NOT NULL,
+
+  -- Provider type
+  provider        TEXT NOT NULL DEFAULT 'uazapi'
+    CHECK (provider IN ('uazapi', 'meta_cloud')),
+
+  -- UazAPI config (quando provider = 'uazapi')
+  uazapi_token    TEXT,
+  uazapi_url      TEXT,
+
+  -- Meta Cloud API config (quando provider = 'meta_cloud')
+  meta_access_token        TEXT,
+  meta_phone_number_id     TEXT,
+  meta_business_account_id TEXT,
+  meta_verify_token        TEXT,
+
+  -- Shared fields
   phone_number    TEXT,
   status          TEXT DEFAULT 'disconnected'
-    CHECK (status IN ('connected', 'disconnected', 'qr_pending')),
+    CHECK (status IN ('connected', 'disconnected', 'qr_pending', 'connecting')),
   webhook_secret  TEXT NOT NULL DEFAULT gen_random_uuid()::text,
   last_connected_at TIMESTAMPTZ,
   created_at      TIMESTAMPTZ DEFAULT now(),

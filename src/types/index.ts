@@ -90,16 +90,38 @@ export interface Rule {
   updated_at: string;
 }
 
-export interface Channel {
+export type WhatsAppProvider = 'uazapi' | 'meta_cloud';
+export type InstanceStatus = 'connected' | 'disconnected' | 'qr_pending' | 'connecting';
+
+export interface WhatsAppInstance {
   id: string;
   organization_id: string;
-  type: 'whatsapp';
-  provider: 'twilio' | '360dialog' | 'meta_cloud';
-  phone_number: string;
-  status: 'connected' | 'disconnected' | 'pending';
-  credentials: Record<string, string>;
+  instance_name: string;
+  provider: WhatsAppProvider;
+  // UazAPI
+  uazapi_token?: string;
+  uazapi_url?: string;
+  // Meta Cloud
+  meta_access_token?: string;
+  meta_phone_number_id?: string;
+  meta_business_account_id?: string;
+  meta_verify_token?: string;
+  // Shared
+  phone_number?: string;
+  status: InstanceStatus;
+  webhook_secret: string;
+  last_connected_at?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface NormalizedMessage {
+  from: string;
+  text: string;
+  timestamp: string;
+  contactName?: string;
+  provider: WhatsAppProvider;
+  rawPayload: unknown;
 }
 
 export interface Conversation {
