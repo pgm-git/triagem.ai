@@ -33,12 +33,13 @@ export async function updateSession(request: NextRequest) {
         request.nextUrl.pathname.startsWith('/login') ||
         request.nextUrl.pathname.startsWith('/register');
     const isWebhook = request.nextUrl.pathname.startsWith('/api/webhooks');
+    const isAuthApi = request.nextUrl.pathname.startsWith('/api/auth');
     const isApi = request.nextUrl.pathname.startsWith('/api');
 
-    // Webhooks skip auth
-    if (isWebhook) return supabaseResponse;
+    // Webhooks and Auth APIs skip auth
+    if (isWebhook || isAuthApi) return supabaseResponse;
 
-    // API routes return 401 if not authenticated  
+    // Other API routes return 401 if not authenticated  
     if (isApi && !user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
