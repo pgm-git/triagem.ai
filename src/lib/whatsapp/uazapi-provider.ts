@@ -133,6 +133,7 @@ export class UazAPIProvider implements IWhatsAppProvider {
                     url,
                     events: ['messages', 'connection'],
                     excludeMessages: ['wasSentByApi'],
+                    ignoreGroups: true,
                 }),
             });
             if (!res.ok) {
