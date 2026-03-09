@@ -2,13 +2,14 @@
 
 import { useSetupStore } from '@/stores/setup';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { StepIndicator } from '@/components/wizard/step-indicator';
 import { StepRoutingType } from '@/components/wizard/step-routing-type';
 import { StepSectors } from '@/components/wizard/step-sectors';
 import { StepRules } from '@/components/wizard/step-rules';
 import { StepFallback } from '@/components/wizard/step-fallback';
 import { StepConnect } from '@/components/wizard/step-connect';
-import { ArrowLeft, ArrowRight, Zap, MessageSquareMore } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Zap, MessageSquareMore, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const stepLabels = ['Roteamento', 'Setores', 'Regras', 'Fallback', 'Conectar'];
@@ -16,6 +17,7 @@ const stepLabels = ['Roteamento', 'Setores', 'Regras', 'Fallback', 'Conectar'];
 export default function SetupPage() {
     const { currentStep, setStep, data, markComplete } = useSetupStore();
     const router = useRouter();
+    const [isActivating, setIsActivating] = useState(false);
 
     const canAdvance = (): boolean => {
         switch (currentStep) {
@@ -50,9 +52,26 @@ export default function SetupPage() {
         }
     };
 
-    const handleActivate = () => {
-        markComplete();
-        router.push('/dashboard');
+    const handleActivate = async () => {
+        setIsActivating(true);
+        try {
+            const res = await fetch('/api/organizations/setup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            if (res.ok) {
+                markComplete();
+                router.push('/dashboard');
+            } else {
+                console.error('Erro ao salvar setup no backend');
+            }
+        } catch (error) {
+            console.error('Falha de rede ao salvar setup', error);
+        } finally {
+            setIsActivating(false);
+        }
     };
 
     const renderStep = () => {
@@ -121,10 +140,11 @@ export default function SetupPage() {
                 ) : (
                     <button
                         onClick={handleActivate}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg transition-all cursor-pointer"
+                        disabled={isActivating}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white text-sm font-medium rounded-lg transition-all cursor-pointer"
                     >
-                        <Zap className="w-4 h-4" />
-                        Ativar TrackerAi Pro
+                        {isActivating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                        {isActivating ? 'Salvando...' : 'Ativar TrackerAi Pro'}
                     </button>
                 )}
             </div>

@@ -45,9 +45,11 @@ export default function ConversasPage() {
     const [sending, setSending] = useState(false);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [sectors, setSectors] = useState<any[]>([]);
+    const [transferring, setTransferring] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Load conversations
+    // Load conversations and sectors
     const loadConversations = useCallback(async () => {
         try {
             const res = await fetch('/api/conversations');
@@ -62,7 +64,22 @@ export default function ConversasPage() {
         }
     }, []);
 
-    useEffect(() => { loadConversations(); }, [loadConversations]);
+    const loadSectors = useCallback(async () => {
+        try {
+            const res = await fetch('/api/sectors');
+            if (res.ok) {
+                const data = await res.json();
+                setSectors(data.sectors || []);
+            }
+        } catch (err) {
+            console.error('Failed to load sectors:', err);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadConversations();
+        loadSectors();
+    }, [loadConversations, loadSectors]);
 
     // Real-time subscription for new messages
     useEffect(() => {
@@ -160,6 +177,36 @@ export default function ConversasPage() {
         }
 
         setSending(false);
+    };
+
+    // Transfer sector
+    const handleTransfer = async (newSectorId: string) => {
+        if (!selectedId || transferring) return;
+        setTransferring(true);
+
+        const sector = sectors.find(s => s.id === newSectorId);
+
+        try {
+            const res = await fetch(`/api/conversations/${selectedId}/transfer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    new_sector_id: newSectorId,
+                    new_sector_name: sector?.name
+                }),
+            });
+
+            if (res.ok) {
+                // Optimistic UI update
+                setConversations(prev => prev.map(c =>
+                    c.id === selectedId ? { ...c, sector_id: newSectorId, sectors: { id: sector.id, name: sector.name, icon: sector.icon }, routed_by: 'manual' } : c
+                ));
+            }
+        } catch (err) {
+            console.error('Failed to transfer conversation', err);
+        } finally {
+            setTransferring(false);
+        }
     };
 
     const selected = conversations.find(c => c.id === selectedId);
@@ -308,9 +355,11 @@ export default function ConversasPage() {
                                                 'max-w-[70%] px-3 py-2 rounded-2xl text-sm',
                                                 msg.sender_type === 'client'
                                                     ? 'bg-zinc-800 text-zinc-200 rounded-bl-md'
-                                                    : msg.sender_type === 'bot'
-                                                        ? 'bg-purple-600/20 text-purple-200 border border-purple-500/20 rounded-br-md'
-                                                        : 'bg-indigo-600 text-white rounded-br-md'
+                                                    : msg.sender_type === 'system'
+                                                        ? 'bg-zinc-900 border border-zinc-800 text-zinc-400 italic rounded-md w-full text-center'
+                                                        : msg.sender_type === 'bot'
+                                                            ? 'bg-purple-600/20 text-purple-200 border border-purple-500/20 rounded-br-md'
+                                                            : 'bg-indigo-600 text-white rounded-br-md'
                                             )}
                                         >
                                             <div className="flex items-center gap-1.5 mb-0.5">
@@ -386,9 +435,17 @@ export default function ConversasPage() {
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <span className="text-xs text-zinc-500">Setor</span>
-                                <span className="text-xs text-zinc-300">
-                                    {selected.sectors ? `${selected.sectors.icon} ${selected.sectors.name}` : 'Sem setor'}
-                                </span>
+                                <select
+                                    disabled={transferring}
+                                    value={selected.sector_id || ''}
+                                    onChange={(e) => handleTransfer(e.target.value)}
+                                    className="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-indigo-500/50 disabled:opacity-50 max-w-[140px]"
+                                >
+                                    <option value="" disabled>Selecionar Setor...</option>
+                                    {sectors.filter(s => s.is_active).map(s => (
+                                        <option key={s.id} value={s.id}>{s.icon} {s.name}</option>
+                                    ))}
+                                </select>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-xs text-zinc-500">Método</span>
