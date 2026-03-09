@@ -1,19 +1,37 @@
 -- =============================================
--- FIX: Recreate handle_new_user trigger
--- Run this AFTER the main schema if you get "Database error saving new user"
+-- DEFINITIVE FIX: Profiles table + Triggers
+-- 
+-- Root cause: The old 001_initial_schema.sql created profiles
+-- with only (id, full_name, avatar_url, created_at).
+-- The new 20260308_production_schema used CREATE TABLE IF NOT EXISTS
+-- which didn't add the missing columns (email, organization_id, role, etc.)
 -- =============================================
 
--- Drop any existing triggers
+-- Step 1: Add missing columns to profiles
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES organizations(id) ON DELETE SET NULL;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'owner';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+
+-- Make full_name nullable (it was NOT NULL in old schema but we want it optional)
+ALTER TABLE profiles ALTER COLUMN full_name DROP NOT NULL;
+
+-- Create index on organization_id if not exists
+CREATE INDEX IF NOT EXISTS idx_profiles_org ON profiles(organization_id);
+
+
+-- Step 2: Drop ALL existing triggers on auth.users and profiles
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP TRIGGER IF EXISTS on_profile_created ON profiles;
 
--- Drop old functions
+
+-- Step 3: Drop old functions
 DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
 DROP FUNCTION IF EXISTS public.handle_new_org_for_user() CASCADE;
 
--- ============================================
--- Recreate: Auto-create profile on signup
--- ============================================
+
+-- Step 4: Recreate handle_new_user
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -32,9 +50,7 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 
--- ============================================
--- Recreate: Auto-create org after profile
--- ============================================
+-- Step 5: Recreate handle_new_org_for_user
 CREATE OR REPLACE FUNCTION public.handle_new_org_for_user()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -74,6 +90,9 @@ CREATE TRIGGER on_profile_created
   AFTER INSERT ON profiles
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_org_for_user();
 
+
 -- =============================================
--- DONE! Try registering again.
+-- DONE! The profiles table now has all required columns
+-- and the triggers are correctly recreated.
+-- Try registering again.
 -- =============================================
