@@ -1,6 +1,27 @@
 // TypeScript types for TrackerAi Pro
 // Auto-generate Supabase types with: npx supabase gen types typescript
 
+export interface OrganizationSettings {
+  organization_id: string;
+  ai_provider: string;
+  ai_model: string;
+  ai_temperature: number;
+  custom_prompt_base?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AIPersona {
+  id: string;
+  organization_id: string;
+  name: string;
+  description?: string;
+  prompt_instructions?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Organization {
   id: string;
   name: string;
@@ -54,6 +75,8 @@ export interface Sector {
   is_fallback: boolean;
   fallback_message?: string;
   priority: number;
+  keywords?: string[];
+  response_template?: string;
   triggers?: SectorTrigger[];
   collection_fields?: CollectionField[];
   created_at: string;

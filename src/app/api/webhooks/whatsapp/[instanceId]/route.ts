@@ -179,7 +179,7 @@ export async function POST(
             // ──── 3. Route the message ────
             const { data: sectors } = await supabase
                 .from('sectors')
-                .select('id, keywords, response_template, is_fallback, fallback_message, is_active, priority')
+                .select('*')
                 .eq('organization_id', instance.organization_id)
                 .eq('is_active', true)
                 .order('priority', { ascending: true });
@@ -205,10 +205,36 @@ export async function POST(
             }
 
             if (!matchedSectorId) {
-                const fallback = (sectors || []).find(s => s.is_fallback);
-                if (fallback) {
-                    matchedSectorId = fallback.id;
-                    responseTemplate = fallback.fallback_message;
+                // ──── 3.5 AI Routing Pipeline ────
+                const { processMessageWithAI } = await import('@/lib/ai/router');
+                const aiResult = await processMessageWithAI(messageText, instance.organization_id, sectors || [], supabase);
+
+                if (aiResult) {
+                    console.log(`[Webhook] AI Decision: ${aiResult.action} | Sector: ${aiResult.sector_id} | Reasoning: ${aiResult.reasoning}`);
+
+                    if (aiResult.action === 'route' && aiResult.sector_id) {
+                        // Verify if AI gave a real sector_id
+                        const validSector = (sectors || []).find(s => s.id === aiResult.sector_id);
+                        if (validSector && !validSector.is_fallback) {
+                            matchedSectorId = validSector.id;
+                            routedBy = 'auto'; // Using auto for AI routed
+                            matchedKeyword = 'AI_INTENT';
+                        }
+                    }
+                    // AI overrides the response regardless of routing or asking
+                    responseTemplate = aiResult.response;
+                }
+
+                // If AI gave no valid sector, or if AI failed completely, fallback
+                if (!matchedSectorId) {
+                    const fallback = (sectors || []).find(s => s.is_fallback);
+                    if (fallback) {
+                        matchedSectorId = fallback.id;
+                        // Only use fallback message if AI hasn't already provided a response
+                        if (!responseTemplate) {
+                            responseTemplate = fallback.fallback_message;
+                        }
+                    }
                 }
             }
 
