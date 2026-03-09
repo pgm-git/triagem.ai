@@ -1,19 +1,52 @@
 // API Route: /api/channels
-// Server-side only — manages WhatsApp instances
-// Admin token is used HERE to create UazAPI instances, never exposed to frontend
+// Server-side only — manages WhatsApp instances with Supabase persistence
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 import { UazAPIProvider } from '@/lib/whatsapp/uazapi-provider';
 
 // ── GET: List instances ────────────────────────────────
 export async function GET() {
-    // TODO: Replace with Supabase query
-    // const { data } = await supabase.from('whatsapp_instances').select().eq('organization_id', orgId);
-    return NextResponse.json({ instances: [] });
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user.id)
+        .single();
+
+    if (!profile?.organization_id) {
+        return NextResponse.json({ instances: [] });
+    }
+
+    const { data: instances, error } = await supabase
+        .from('whatsapp_instances')
+        .select('*')
+        .eq('organization_id', profile.organization_id)
+        .order('created_at', { ascending: false });
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ instances: instances || [] });
 }
 
 // ── POST: Create new instance ──────────────────────────
 export async function POST(request: NextRequest) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user.id)
+        .single();
+
+    if (!profile?.organization_id) {
+        return NextResponse.json({ error: 'No organization' }, { status: 400 });
+    }
+
     try {
         const body = await request.json();
         const { provider, instance_name } = body;
@@ -55,10 +88,29 @@ export async function POST(request: NextRequest) {
 
             const instanceToken = initResult.token;
 
-            // Step 2: Configure webhook for this instance
-            const instanceId = crypto.randomUUID();
+            // Step 2: Save to Supabase first to get the ID
+            const webhookSecret = crypto.randomUUID();
+            const { data: dbInstance, error: insertError } = await supabase
+                .from('whatsapp_instances')
+                .insert({
+                    organization_id: profile.organization_id,
+                    instance_name: instanceName,
+                    provider: 'uazapi',
+                    uazapi_token: instanceToken,
+                    uazapi_url: baseUrl,
+                    status: 'qr_pending',
+                    webhook_secret: webhookSecret,
+                })
+                .select()
+                .single();
+
+            if (insertError) {
+                return NextResponse.json({ error: insertError.message }, { status: 500 });
+            }
+
+            // Step 3: Configure webhook for this instance
             const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://seu-dominio.com';
-            const webhookUrl = `${appUrl}/api/webhooks/whatsapp/${instanceId}`;
+            const webhookUrl = `${appUrl}/api/webhooks/whatsapp/${dbInstance.id}`;
 
             const uazProvider = new UazAPIProvider({
                 baseUrl,
@@ -70,37 +122,19 @@ export async function POST(request: NextRequest) {
                 console.warn(`[Channels] Webhook config warning: ${webhookResult.error}`);
             }
 
-            // Step 3: Call connect() to generate QR Code
+            // Step 4: Call connect() to generate QR Code
             console.log(`[Channels] Calling connect() to generate QR Code...`);
             const connectResult = await uazProvider.connect();
             console.log(`[Channels] Connect result:`, JSON.stringify(connectResult).substring(0, 200));
 
-            // Step 4: Save to database
-            // TODO: Replace with real Supabase insert
-            // await supabase.from('whatsapp_instances').insert({
-            //   id: instanceId,
-            //   organization_id: orgId,
-            //   instance_name: instanceName,
-            //   provider: 'uazapi',
-            //   uazapi_token: instanceToken,
-            //   uazapi_url: baseUrl,
-            //   status: 'qr_pending',
-            //   webhook_secret: crypto.randomUUID(),
-            // });
-
-            const newInstance = {
-                id: instanceId,
-                instance_name: instanceName,
-                provider: 'uazapi' as const,
-                uazapi_url: baseUrl,
-                status: (connectResult.qrCode ? 'qr_pending' : 'disconnected') as 'qr_pending' | 'disconnected',
-                webhook_url: webhookUrl,
-                created_at: new Date().toISOString(),
-                qrCode: connectResult.qrCode || null,
-                pairingCode: connectResult.pairingCode || null,
-            };
-
-            return NextResponse.json({ instance: newInstance }, { status: 201 });
+            return NextResponse.json({
+                instance: {
+                    ...dbInstance,
+                    webhook_url: webhookUrl,
+                    qrCode: connectResult.qrCode || null,
+                    pairingCode: connectResult.pairingCode || null,
+                },
+            }, { status: 201 });
         }
 
         // ═══════════════════════════════════════════════════
@@ -130,35 +164,39 @@ export async function POST(request: NextRequest) {
                 );
             }
 
-            const instanceId = crypto.randomUUID();
-            const verifyToken = crypto.randomUUID(); // For webhook verification
+            const verifyToken = crypto.randomUUID();
+            const webhookSecret = crypto.randomUUID();
 
-            // TODO: Save to Supabase
-            // await supabase.from('whatsapp_instances').insert({
-            //   id: instanceId,
-            //   organization_id: orgId,
-            //   provider: 'meta_cloud',
-            //   meta_access_token: access_token,
-            //   meta_phone_number_id: phone_number_id,
-            //   meta_business_account_id: business_account_id,
-            //   meta_verify_token: verifyToken,
-            //   phone_number: validateData.display_phone_number,
-            //   status: 'connected',
-            // });
+            const { data: dbInstance, error: insertError } = await supabase
+                .from('whatsapp_instances')
+                .insert({
+                    organization_id: profile.organization_id,
+                    instance_name: instance_name || validateData.verified_name || 'WhatsApp Business',
+                    provider: 'meta_cloud',
+                    meta_access_token: access_token,
+                    meta_phone_number_id: phone_number_id,
+                    meta_business_account_id: business_account_id || null,
+                    meta_verify_token: verifyToken,
+                    phone_number: validateData.display_phone_number,
+                    status: 'connected',
+                    webhook_secret: webhookSecret,
+                })
+                .select()
+                .single();
 
-            const newInstance = {
-                id: instanceId,
-                instance_name: instance_name || validateData.verified_name || 'WhatsApp Business',
-                provider: 'meta_cloud' as const,
-                phone_number: validateData.display_phone_number,
-                verified_name: validateData.verified_name,
-                status: 'connected' as const,
-                verify_token: verifyToken,
-                webhook_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://seu-dominio.com'}/api/webhooks/whatsapp/${instanceId}`,
-                created_at: new Date().toISOString(),
-            };
+            if (insertError) {
+                return NextResponse.json({ error: insertError.message }, { status: 500 });
+            }
 
-            return NextResponse.json({ instance: newInstance }, { status: 201 });
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://seu-dominio.com';
+
+            return NextResponse.json({
+                instance: {
+                    ...dbInstance,
+                    verified_name: validateData.verified_name,
+                    webhook_url: `${appUrl}/api/webhooks/whatsapp/${dbInstance.id}`,
+                },
+            }, { status: 201 });
         }
 
         return NextResponse.json({ error: 'Provider not implemented' }, { status: 400 });
@@ -166,4 +204,19 @@ export async function POST(request: NextRequest) {
         console.error('[Channels] Error creating instance:', error);
         return NextResponse.json({ error: 'Internal error' }, { status: 500 });
     }
+}
+
+// ── DELETE: Remove instance ────────────────────────────
+export async function DELETE(request: NextRequest) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+
+    const { error } = await supabase.from('whatsapp_instances').delete().eq('id', id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true });
 }

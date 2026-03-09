@@ -1,49 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { SectorCard } from '@/components/sectors/sector-card';
 import { SectorDrawer } from '@/components/sectors/sector-drawer';
-import { Building2, Plus, Search } from 'lucide-react';
+import { Building2, Plus, Search, Loader2 } from 'lucide-react';
 import type { Sector } from '@/types';
 
-const mockSectors: Sector[] = [
-    {
-        id: '1', organization_id: 'org-1', name: 'Financeiro', icon: '💰',
-        destination: '+55 11 99999-0001', is_active: true, is_fallback: false, priority: 0,
-        triggers: [{ keywords: ['boleto', 'pagamento', 'pagar', 'fatura', 'cobrança'], response_template: 'Vou encaminhar você para o setor Financeiro. Aguarde um momento.', type: 'keyword', is_active: true }],
-        created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-    },
-    {
-        id: '2', organization_id: 'org-1', name: 'Comercial', icon: '🤝',
-        destination: '+55 11 99999-0002', is_active: true, is_fallback: false, priority: 1,
-        triggers: [{ keywords: ['preço', 'orçamento', 'cotação', 'proposta', 'comprar'], response_template: 'Encaminhando para o Comercial. Em breve um consultor irá atendê-lo.', type: 'keyword', is_active: true }],
-        collection_fields: [
-            { id: 'cf-1', variable: 'placa', label: 'Placa do veículo', context: 'Placa no formato ABC-1234 ou ABC1D23', required: true },
-            { id: 'cf-2', variable: 'cep', label: 'CEP', context: 'CEP com 8 dígitos, formato 00000-000', required: true },
-            { id: 'cf-3', variable: 'modelo', label: 'Modelo do veículo', context: 'Nome, ano e modelo do veículo. Ex: Fiat Uno 2020', required: false },
-        ],
-        created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-    },
-    {
-        id: '3', organization_id: 'org-1', name: 'Suporte', icon: '🛠️',
-        destination: '+55 11 99999-0003', is_active: true, is_fallback: false, priority: 2,
-        triggers: [{ keywords: ['erro', 'bug', 'não funciona', 'ajuda', 'suporte', 'problema'], response_template: 'Encaminhando para o Suporte Técnico. Aguarde!', type: 'keyword', is_active: true }],
-        created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-    },
-    {
-        id: '4', organization_id: 'org-1', name: 'Ouvidoria', icon: '📢',
-        destination: '+55 11 99999-0004', is_active: true, is_fallback: true,
-        fallback_message: 'Vou te encaminhar para um atendente. Aguarde um momento.', priority: 3,
-        triggers: [{ keywords: ['reclamação', 'reclamar', 'insatisfeito', 'denúncia', 'cancelar'], response_template: 'Sua mensagem será encaminhada para a Ouvidoria.', type: 'intention', is_active: true }],
-        created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-    },
-];
-
 export default function SetoresPage() {
-    const [sectors, setSectors] = useState<Sector[]>(mockSectors);
+    const [sectors, setSectors] = useState<Sector[]>([]);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [editingSector, setEditingSector] = useState<Sector | null>(null);
     const [search, setSearch] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    const loadSectors = useCallback(async () => {
+        try {
+            const res = await fetch('/api/sectors');
+            if (res.ok) {
+                const data = await res.json();
+                setSectors(data.map((s: Record<string, unknown>) => ({
+                    ...s,
+                    triggers: s.keywords
+                        ? [{ keywords: s.keywords as string[], response_template: (s.response_template || '') as string, type: 'keyword' as const, is_active: true }]
+                        : [],
+                    collection_fields: s.collection_fields || [],
+                })));
+            }
+        } catch (err) {
+            console.error('Failed to load sectors:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => { loadSectors(); }, [loadSectors]);
 
     const filtered = sectors.filter((s) =>
         s.name.toLowerCase().includes(search.toLowerCase())
@@ -51,31 +41,60 @@ export default function SetoresPage() {
 
     const handleEdit = (sector: Sector) => { setEditingSector(sector); setDrawerOpen(true); };
 
-    const handleToggle = (id: string, isActive: boolean) => {
+    const handleToggle = async (id: string, isActive: boolean) => {
         setSectors((prev) => prev.map((s) => (s.id === id ? { ...s, is_active: isActive } : s)));
+        await fetch('/api/sectors', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, is_active: isActive }),
+        });
     };
 
-    const handleDelete = (id: string) => { setSectors((prev) => prev.filter((s) => s.id !== id)); };
+    const handleDelete = async (id: string) => {
+        setSectors((prev) => prev.filter((s) => s.id !== id));
+        await fetch(`/api/sectors?id=${id}`, { method: 'DELETE' });
+    };
 
-    const handleSave = (data: Partial<Sector>) => {
-        if (editingSector) {
-            setSectors((prev) => prev.map((s) => (s.id === editingSector.id ? { ...s, ...data } : s)));
-        } else {
-            const newSector: Sector = {
-                id: crypto.randomUUID(), organization_id: 'org-1',
-                name: data.name || 'Novo Setor', icon: data.icon, destination: data.destination || '',
-                is_active: data.is_active ?? true, is_fallback: data.is_fallback ?? false,
-                fallback_message: data.fallback_message, priority: data.priority ?? sectors.length,
-                schedule_start: data.schedule_start, schedule_end: data.schedule_end,
-                triggers: data.triggers,
-                created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-            };
-            setSectors((prev) => [...prev, newSector]);
+    const handleSave = async (data: Partial<Sector>) => {
+        const body = {
+            ...(editingSector ? { id: editingSector.id } : {}),
+            name: data.name,
+            icon: data.icon,
+            destination: data.destination,
+            is_active: data.is_active,
+            is_fallback: data.is_fallback,
+            fallback_message: data.fallback_message,
+            priority: data.priority,
+            schedule_start: data.schedule_start,
+            schedule_end: data.schedule_end,
+            keywords: data.triggers?.[0]?.keywords || [],
+            response_template: data.triggers?.[0]?.response_template || '',
+            collection_fields: data.collection_fields || [],
+        };
+
+        const res = await fetch('/api/sectors', {
+            method: editingSector ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+
+        if (res.ok) {
+            await loadSectors();
         }
-        setDrawerOpen(false); setEditingSector(null);
+
+        setDrawerOpen(false);
+        setEditingSector(null);
     };
 
     const totalTriggers = sectors.reduce((acc, s) => acc + (s.triggers?.[0]?.keywords?.length || 0), 0);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">

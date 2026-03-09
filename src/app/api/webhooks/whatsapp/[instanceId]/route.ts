@@ -1,10 +1,16 @@
 // Dynamic Webhook: /api/webhooks/whatsapp/[instanceId]
-// Each WhatsApp instance has its own webhook URL
-// UazAPI sends here: POST /api/webhooks/whatsapp/{instanceId}
-// Meta sends here: GET (verify) + POST (messages) /api/webhooks/whatsapp/{instanceId}
+// Full pipeline: receive → parse → contact → conversation → route → respond → save
 
 import { NextRequest, NextResponse } from 'next/server';
-import { normalizeUazAPIPayload, normalizeMetaPayload } from '@/lib/whatsapp/normalize';
+import { createClient } from '@supabase/supabase-js';
+
+// Service role client for webhook (no user session)
+function getAdminSupabase() {
+    return createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+}
 
 // ── GET: Meta Webhook Verification ─────────────────────
 export async function GET(
@@ -13,19 +19,21 @@ export async function GET(
 ) {
     const { instanceId } = await params;
     const { searchParams } = new URL(request.url);
-
     const mode = searchParams.get('hub.mode');
     const token = searchParams.get('hub.verify_token');
     const challenge = searchParams.get('hub.challenge');
 
-    // TODO: Look up verify_token from DB for this instance
-    // const instance = await supabase.from('whatsapp_instances').select().eq('id', instanceId).single();
-    // const expectedToken = instance.meta_verify_token || instance.webhook_secret;
-    const expectedToken = process.env.WHATSAPP_WEBHOOK_SECRET || '';
+    if (mode === 'subscribe') {
+        const supabase = getAdminSupabase();
+        const { data: instance } = await supabase
+            .from('whatsapp_instances')
+            .select('meta_verify_token')
+            .eq('id', instanceId)
+            .single();
 
-    if (mode === 'subscribe' && token === expectedToken) {
-        console.log(`[Webhook] Meta verification OK for instance ${instanceId}`);
-        return new Response(challenge, { status: 200 });
+        if (instance && token === instance.meta_verify_token) {
+            return new Response(challenge, { status: 200 });
+        }
     }
 
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -40,45 +48,242 @@ export async function POST(
 
     try {
         const body = await request.json();
+        const supabase = getAdminSupabase();
 
-        // TODO: Look up instance from DB
-        // const instance = await supabase.from('whatsapp_instances').select().eq('id', instanceId).single();
-        // if (!instance) return NextResponse.json({ error: 'Instance not found' }, { status: 404 });
-        // const provider = instance.provider;
+        // Lookup the instance
+        const { data: instance } = await supabase
+            .from('whatsapp_instances')
+            .select('id, organization_id, provider, uazapi_token, uazapi_url')
+            .eq('id', instanceId)
+            .single();
 
-        // Detect provider from payload structure
-        const isMetaPayload = body.object === 'whatsapp_business_account' || body.entry;
-        const provider = isMetaPayload ? 'meta_cloud' : 'uazapi';
-
-        // Normalize the payload to our internal format
-        const normalized = provider === 'meta_cloud'
-            ? normalizeMetaPayload(body)
-            : normalizeUazAPIPayload(body);
-
-        if (!normalized) {
-            // Not a message we care about (e.g., status update, group message)
-            return NextResponse.json({ received: true, processed: false }, { status: 200 });
+        if (!instance) {
+            console.warn(`[Webhook] Unknown instance: ${instanceId}`);
+            return NextResponse.json({ error: 'Instance not found' }, { status: 404 });
         }
 
-        console.log(`[Webhook][${instanceId}][${provider}] Message from ${normalized.from}: ${normalized.text}`);
+        // ──── Parse message based on provider ────
+        let senderPhone: string | null = null;
+        let senderName: string | null = null;
+        let messageText: string | null = null;
+        let externalId: string | null = null;
 
-        // TODO: Route through engine
-        // 1. Find or create contact
-        // 2. Find or create conversation linked to this instance
-        // 3. Save the message
-        // 4. Apply routing rules via routing engine
-        // 5. Send auto-response via the provider
-        // 6. Create routing log
+        if (instance.provider === 'uazapi') {
+            const event = body.event || body.type;
 
-        // For now, just acknowledge receipt
-        return NextResponse.json({
-            received: true,
-            processed: true,
-            from: normalized.from,
-            provider,
-            instanceId,
-        }, { status: 200 });
+            // Handle connection status updates
+            if (event === 'connection' || event === 'connection.update') {
+                const state = body.data?.state || body.state;
+                const newStatus = state === 'open' ? 'connected' : 'disconnected';
+                await supabase
+                    .from('whatsapp_instances')
+                    .update({
+                        status: newStatus,
+                        ...(newStatus === 'connected' ? { last_connected_at: new Date().toISOString() } : {}),
+                    })
+                    .eq('id', instanceId);
+                console.log(`[Webhook] Instance ${instanceId} status: ${newStatus}`);
+                return NextResponse.json({ received: true });
+            }
 
+            // Only process incoming text messages
+            if (event !== 'messages' && event !== 'messages.upsert') {
+                return NextResponse.json({ received: true });
+            }
+
+            const data = body.data || body;
+            const key = data.key || {};
+            const msg = data.message || {};
+
+            // Skip messages sent by us
+            if (key.fromMe === true) {
+                return NextResponse.json({ received: true });
+            }
+
+            senderPhone = (key.remoteJid || '').replace('@s.whatsapp.net', '').replace('@c.us', '');
+            senderName = data.pushName || null;
+            messageText = msg.conversation || msg.extendedTextMessage?.text || msg.text || null;
+            externalId = key.id || null;
+
+        } else if (instance.provider === 'meta_cloud') {
+            const change = body.entry?.[0]?.changes?.[0]?.value;
+            if (change?.statuses) return NextResponse.json({ received: true });
+
+            const message = change?.messages?.[0];
+            if (!message) return NextResponse.json({ received: true });
+
+            senderPhone = message.from;
+            senderName = change.contacts?.[0]?.profile?.name || null;
+            messageText = message.text?.body || null;
+            externalId = message.id || null;
+        }
+
+        if (!senderPhone || !messageText) {
+            return NextResponse.json({ received: true });
+        }
+
+        console.log(`[Webhook] ${senderPhone} (${senderName}): ${messageText.substring(0, 100)}`);
+
+        // ──── 1. Find or create contact ────
+        const { data: existingContact } = await supabase
+            .from('contacts')
+            .select('id, total_messages')
+            .eq('organization_id', instance.organization_id)
+            .eq('phone', senderPhone)
+            .single();
+
+        let contactId: string;
+
+        if (existingContact) {
+            contactId = existingContact.id;
+            await supabase.from('contacts').update({
+                name: senderName || undefined,
+                last_message_at: new Date().toISOString(),
+                total_messages: (existingContact.total_messages || 0) + 1,
+            }).eq('id', contactId);
+        } else {
+            const { data: newContact } = await supabase
+                .from('contacts')
+                .insert({
+                    organization_id: instance.organization_id,
+                    phone: senderPhone,
+                    name: senderName,
+                    last_message_at: new Date().toISOString(),
+                })
+                .select('id')
+                .single();
+            contactId = newContact!.id;
+            await supabase.rpc('increment_usage', { p_org_id: instance.organization_id, p_type: 'contact' });
+        }
+
+        // ──── 2. Find active conversation or create new ────
+        const { data: existingConv } = await supabase
+            .from('conversations')
+            .select('id, sector_id, unread_count')
+            .eq('organization_id', instance.organization_id)
+            .eq('contact_phone', senderPhone)
+            .in('status', ['active', 'pending_triage'])
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        let conversationId: string;
+
+        if (existingConv) {
+            conversationId = existingConv.id;
+            await supabase.from('conversations').update({
+                last_message_at: new Date().toISOString(),
+                unread_count: (existingConv.unread_count || 0) + 1,
+            }).eq('id', conversationId);
+        } else {
+            // ──── 3. Route the message ────
+            const { data: sectors } = await supabase
+                .from('sectors')
+                .select('id, keywords, response_template, is_fallback, fallback_message, is_active, priority')
+                .eq('organization_id', instance.organization_id)
+                .eq('is_active', true)
+                .order('priority', { ascending: true });
+
+            const normalized = messageText.toLowerCase().trim();
+            let matchedSectorId: string | null = null;
+            let matchedKeyword: string | null = null;
+            let routedBy: 'auto' | 'fallback' = 'fallback';
+            let responseTemplate: string | null = null;
+
+            for (const sector of (sectors || [])) {
+                if (sector.is_fallback) continue;
+                for (const kw of (sector.keywords || []) as string[]) {
+                    if (normalized.includes(kw.toLowerCase())) {
+                        matchedSectorId = sector.id;
+                        matchedKeyword = kw;
+                        routedBy = 'auto';
+                        responseTemplate = sector.response_template;
+                        break;
+                    }
+                }
+                if (matchedSectorId) break;
+            }
+
+            if (!matchedSectorId) {
+                const fallback = (sectors || []).find(s => s.is_fallback);
+                if (fallback) {
+                    matchedSectorId = fallback.id;
+                    responseTemplate = fallback.fallback_message;
+                }
+            }
+
+            const { data: newConv } = await supabase
+                .from('conversations')
+                .insert({
+                    organization_id: instance.organization_id,
+                    instance_id: instanceId,
+                    sector_id: matchedSectorId,
+                    contact_id: contactId,
+                    contact_phone: senderPhone,
+                    contact_name: senderName,
+                    status: matchedSectorId ? 'active' : 'pending_triage',
+                    routed_by: routedBy,
+                    matched_keyword: matchedKeyword,
+                    last_message_at: new Date().toISOString(),
+                    unread_count: 1,
+                })
+                .select('id')
+                .single();
+
+            conversationId = newConv!.id;
+
+            // Log routing
+            if (matchedSectorId) {
+                await supabase.from('routing_logs').insert({
+                    organization_id: instance.organization_id,
+                    conversation_id: conversationId,
+                    event_type: routedBy === 'auto' ? 'auto_route' : 'fallback',
+                    to_sector_id: matchedSectorId,
+                    matched_keyword: matchedKeyword,
+                    metadata: { message_preview: messageText.substring(0, 100) },
+                });
+            }
+
+            await supabase.rpc('increment_usage', { p_org_id: instance.organization_id, p_type: 'conversation' });
+
+            // ──── 4. Send auto-response ────
+            if (responseTemplate && instance.provider === 'uazapi' && instance.uazapi_token && instance.uazapi_url) {
+                try {
+                    const { UazAPIProvider } = await import('@/lib/whatsapp/uazapi-provider');
+                    const provider = new UazAPIProvider({
+                        baseUrl: instance.uazapi_url,
+                        instanceToken: instance.uazapi_token,
+                    });
+                    const result = await provider.sendText(senderPhone, responseTemplate);
+                    if (result.success) {
+                        await supabase.from('messages').insert({
+                            conversation_id: conversationId,
+                            content: responseTemplate,
+                            sender_type: 'bot',
+                            uazapi_message_id: result.messageId,
+                            status: 'sent',
+                        });
+                        await supabase.rpc('increment_usage', { p_org_id: instance.organization_id, p_type: 'message_sent' });
+                        console.log(`[Webhook] Auto-response sent to ${senderPhone}`);
+                    }
+                } catch (err) {
+                    console.error('[Webhook] Auto-response error:', err);
+                }
+            }
+        }
+
+        // ──── 5. Save incoming message ────
+        await supabase.from('messages').insert({
+            conversation_id: conversationId,
+            content: messageText,
+            sender_type: 'client',
+            uazapi_message_id: externalId,
+            status: 'received',
+        });
+
+        await supabase.rpc('increment_usage', { p_org_id: instance.organization_id, p_type: 'message_received' });
+
+        return NextResponse.json({ received: true }, { status: 200 });
     } catch (error) {
         console.error(`[Webhook][${instanceId}] Error:`, error);
         return NextResponse.json({ error: 'Internal error' }, { status: 500 });

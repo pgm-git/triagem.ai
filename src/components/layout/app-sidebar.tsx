@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useUIStore } from '@/stores/ui';
+import { createClient } from '@/lib/supabase/client';
 import {
     LayoutDashboard,
     MessageSquare,
@@ -15,6 +16,7 @@ import {
     ChevronRight,
     MessageSquareMore,
     Sparkles,
+    LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -30,7 +32,15 @@ const navItems = [
 
 export function AppSidebar() {
     const pathname = usePathname();
+    const router = useRouter();
     const { sidebarCollapsed, toggleSidebar } = useUIStore();
+
+    const handleLogout = async () => {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        router.push('/login');
+        router.refresh();
+    };
 
     return (
         <aside
@@ -72,8 +82,16 @@ export function AppSidebar() {
                 })}
             </nav>
 
-            {/* Collapse toggle */}
-            <div className="border-t border-zinc-800 p-2 shrink-0">
+            {/* Bottom actions */}
+            <div className="border-t border-zinc-800 p-2 shrink-0 space-y-1">
+                <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 w-full px-2.5 py-2 rounded-lg text-sm font-medium text-zinc-500 hover:text-red-400 hover:bg-red-500/5 transition-all cursor-pointer"
+                    title={sidebarCollapsed ? 'Sair' : undefined}
+                >
+                    <LogOut className="w-5 h-5 shrink-0" />
+                    {!sidebarCollapsed && <span>Sair</span>}
+                </button>
                 <button
                     onClick={toggleSidebar}
                     className="flex items-center justify-center w-full py-2 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all cursor-pointer"
@@ -88,3 +106,4 @@ export function AppSidebar() {
         </aside>
     );
 }
+

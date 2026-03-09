@@ -1,143 +1,223 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-    Activity,
     MessageSquare,
     AlertTriangle,
+    CheckCircle2,
+    Building2,
+    Smartphone,
+    Loader2,
     ArrowRight,
-    ArrowUp,
-    ArrowDown,
-    TrendingUp,
-    ToggleRight,
-    ToggleLeft,
+    Clock,
+    Zap,
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/contexts/user-context';
+
+interface DashboardStats {
+    active_conversations: number;
+    pending_triage: number;
+    resolved_today: number;
+    total_sectors: number;
+    active_instances: number;
+    recent_conversations: {
+        id: string;
+        contact_name: string | null;
+        contact_phone: string;
+        status: string;
+        last_message_at: string;
+        sectors: { name: string; icon: string } | null;
+    }[];
+    sector_distribution: { name: string; icon: string; count: number }[];
+}
 
 export default function DashboardPage() {
-    const [trackerAtivo, setTrackerAtivo] = useState(true);
+    const { profile } = useUser();
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const stats = [
-        { label: 'Conversas hoje', value: '24', change: '+12%', trend: 'up' as const, icon: MessageSquare },
-        { label: 'Em triagem', value: '3', change: '-2', trend: 'down' as const, icon: Activity },
-        { label: 'Fallbacks', value: '5', change: '+1', trend: 'up' as const, icon: AlertTriangle },
-        { label: 'Tempo médio', value: '2m 15s', change: '-18%', trend: 'down' as const, icon: TrendingUp },
-    ];
+    useEffect(() => {
+        const loadStats = async () => {
+            try {
+                const res = await fetch('/api/dashboard/stats');
+                if (res.ok) {
+                    setStats(await res.json());
+                }
+            } catch (err) {
+                console.error('Failed to load dashboard stats:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadStats();
+        // Refresh every 30s
+        const interval = setInterval(loadStats, 30000);
+        return () => clearInterval(interval);
+    }, []);
 
-    const recentConversations = [
-        { name: 'Maria Silva', sector: 'Financeiro', time: '2 min', status: 'active' },
-        { name: 'João Santos', sector: 'Comercial', time: '5 min', status: 'active' },
-        { name: 'Ana Oliveira', sector: 'Suporte', time: '10 min', status: 'pending_triage' },
-        { name: 'Carlos Ferreira', sector: 'Financeiro', time: '1h', status: 'resolved' },
-        { name: 'Paula Costa', sector: 'Ouvidoria', time: '2h', status: 'resolved' },
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
+            </div>
+        );
+    }
+
+    const cards = [
+        { label: 'Conversas Ativas', value: stats?.active_conversations || 0, icon: MessageSquare, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+        { label: 'Aguardando Triagem', value: stats?.pending_triage || 0, icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+        { label: 'Resolvidas Hoje', value: stats?.resolved_today || 0, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+        { label: 'Setores Ativos', value: stats?.total_sectors || 0, icon: Building2, color: 'text-purple-400', bg: 'bg-purple-500/10' },
     ];
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-                    <p className="text-sm text-zinc-400 mt-1">Visão operacional do seu atendimento</p>
-                </div>
-                <button
-                    onClick={() => setTrackerAtivo(!trackerAtivo)}
-                    className={cn(
-                        'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer',
-                        trackerAtivo
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                    )}
-                >
-                    {trackerAtivo ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
-                    {trackerAtivo ? 'Tracker Ativo' : 'Tracker Pausado'}
-                </button>
+            {/* Header */}
+            <div>
+                <h1 className="text-2xl font-bold text-white">
+                    Olá, {profile?.full_name?.split(' ')[0] || 'Usuário'} 👋
+                </h1>
+                <p className="text-sm text-zinc-400 mt-1">Aqui está o resumo do seu atendimento</p>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {stats.map((stat) => (
-                    <div key={stat.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {cards.map((card) => (
+                    <div key={card.label} className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm text-zinc-400">{stat.label}</span>
-                            <stat.icon className="w-4 h-4 text-zinc-600" />
-                        </div>
-                        <p className="text-2xl font-bold text-white">{stat.value}</p>
-                        <div className="flex items-center gap-1 mt-1">
-                            {stat.trend === 'up' ? (
-                                <ArrowUp className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                                <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', card.bg)}>
+                                <card.icon className={cn('w-5 h-5', card.color)} />
+                            </div>
+                            {card.label === 'Aguardando Triagem' && card.value > 0 && (
+                                <span className="flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-amber-400 opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500" />
+                                </span>
                             )}
-                            <span className="text-xs text-emerald-400">{stat.change}</span>
-                            <span className="text-xs text-zinc-600 ml-1">vs ontem</span>
                         </div>
+                        <p className="text-2xl font-bold text-white">{card.value}</p>
+                        <p className="text-xs text-zinc-500 mt-1">{card.label}</p>
                     </div>
                 ))}
             </div>
 
-            {/* Two-column layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Recent Conversations */}
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl">
-                    <div className="flex items-center justify-between p-5 border-b border-zinc-800">
-                        <h3 className="text-sm font-semibold text-white">Conversas Recentes</h3>
-                        <Link href="/conversas" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
+                <div className="col-span-2 bg-zinc-900/80 border border-zinc-800 rounded-xl">
+                    <div className="flex items-center justify-between p-4 border-b border-zinc-800">
+                        <h2 className="text-sm font-semibold text-zinc-300">Conversas Recentes</h2>
+                        <Link href="/conversas" className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300">
                             Ver todas <ArrowRight className="w-3 h-3" />
                         </Link>
                     </div>
                     <div className="divide-y divide-zinc-800/50">
-                        {recentConversations.map((conv, i) => (
-                            <div key={i} className="flex items-center justify-between px-5 py-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
-                                        {conv.name.slice(0, 2).toUpperCase()}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-white font-medium">{conv.name}</p>
-                                        <p className="text-[10px] text-zinc-500">{conv.sector}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] text-zinc-600">{conv.time}</span>
-                                    <span
-                                        className={cn(
-                                            'w-2 h-2 rounded-full',
-                                            conv.status === 'active' && 'bg-emerald-400',
-                                            conv.status === 'pending_triage' && 'bg-amber-400',
-                                            conv.status === 'resolved' && 'bg-zinc-600'
-                                        )}
-                                    />
-                                </div>
+                        {(!stats?.recent_conversations || stats.recent_conversations.length === 0) ? (
+                            <div className="p-8 text-center text-zinc-500 text-sm">
+                                <MessageSquare className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                                Nenhuma conversa ainda
                             </div>
-                        ))}
+                        ) : (
+                            stats.recent_conversations.map((conv) => (
+                                <Link
+                                    key={conv.id}
+                                    href="/conversas"
+                                    className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/30 transition-colors"
+                                >
+                                    <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-sm">
+                                        {conv.contact_name ? conv.contact_name[0]?.toUpperCase() : '📱'}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm text-zinc-300 truncate">
+                                            {conv.contact_name || conv.contact_phone}
+                                        </p>
+                                        <p className="text-xs text-zinc-500">
+                                            {conv.sectors ? `${conv.sectors.icon} ${conv.sectors.name}` : 'Sem setor'}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-1 text-xs text-zinc-500">
+                                        <Clock className="w-3 h-3" />
+                                        {conv.last_message_at
+                                            ? new Date(conv.last_message_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                                            : '--'}
+                                    </div>
+                                </Link>
+                            ))
+                        )}
                     </div>
                 </div>
 
                 {/* Sector Distribution */}
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-                    <h3 className="text-sm font-semibold text-white mb-4">Distribuição por Setor</h3>
-                    <div className="space-y-4">
-                        {[
-                            { name: 'Financeiro', count: 10, percent: 42, color: 'bg-indigo-500' },
-                            { name: 'Comercial', count: 7, percent: 29, color: 'bg-emerald-500' },
-                            { name: 'Suporte', count: 5, percent: 21, color: 'bg-amber-500' },
-                            { name: 'Ouvidoria', count: 2, percent: 8, color: 'bg-red-500' },
-                        ].map((sector) => (
-                            <div key={sector.name} className="space-y-1.5">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-zinc-300">{sector.name}</span>
-                                    <span className="text-xs text-zinc-500">{sector.count} ({sector.percent}%)</span>
-                                </div>
-                                <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                                    <div
-                                        className={cn('h-full rounded-full transition-all duration-500', sector.color)}
-                                        style={{ width: `${sector.percent}%` }}
-                                    />
-                                </div>
-                            </div>
-                        ))}
+                <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl">
+                    <div className="p-4 border-b border-zinc-800">
+                        <h2 className="text-sm font-semibold text-zinc-300">Distribuição por Setor</h2>
                     </div>
+                    <div className="p-4 space-y-3">
+                        {(!stats?.sector_distribution || stats.sector_distribution.length === 0) ? (
+                            <div className="text-center text-zinc-500 text-sm py-4">
+                                <Building2 className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                                Nenhuma conversa ativa
+                            </div>
+                        ) : (
+                            stats.sector_distribution.map((sector) => {
+                                const total = stats.sector_distribution.reduce((a, b) => a + b.count, 0);
+                                const pct = total > 0 ? (sector.count / total) * 100 : 0;
+                                return (
+                                    <div key={sector.name}>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="text-xs text-zinc-400">
+                                                {sector.icon} {sector.name}
+                                            </span>
+                                            <span className="text-xs text-zinc-500">{sector.count}</span>
+                                        </div>
+                                        <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                                                style={{ width: `${pct}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Connection Status */}
+            <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                    <div className={cn(
+                        'w-10 h-10 rounded-xl flex items-center justify-center',
+                        (stats?.active_instances || 0) > 0 ? 'bg-emerald-500/10' : 'bg-zinc-800'
+                    )}>
+                        <Smartphone className={cn(
+                            'w-5 h-5',
+                            (stats?.active_instances || 0) > 0 ? 'text-emerald-400' : 'text-zinc-600'
+                        )} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-zinc-300">
+                            {(stats?.active_instances || 0) > 0
+                                ? `${stats?.active_instances} instância${(stats?.active_instances || 0) > 1 ? 's' : ''} conectada${(stats?.active_instances || 0) > 1 ? 's' : ''}`
+                                : 'Nenhum WhatsApp conectado'}
+                        </p>
+                        <p className="text-xs text-zinc-500">
+                            {(stats?.active_instances || 0) > 0
+                                ? 'Recebendo mensagens em tempo real'
+                                : 'Conecte um WhatsApp em Canais para começar'}
+                        </p>
+                    </div>
+                    {(stats?.active_instances || 0) === 0 && (
+                        <Link
+                            href="/canais"
+                            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-lg transition-all"
+                        >
+                            <Zap className="w-3 h-3" />
+                            Conectar
+                        </Link>
+                    )}
                 </div>
             </div>
         </div>
