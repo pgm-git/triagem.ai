@@ -19,7 +19,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     if (isSystem) {
         return (
             <div className="flex justify-center my-3">
-                <span className="px-3 py-1 text-[11px] text-zinc-500 bg-zinc-800/50 rounded-full">
+                <span className="px-3 py-1 text-[11px] text-slate-500 bg-slate-800/50 rounded-full">
                     {message.content}
                 </span>
             </div>
@@ -32,15 +32,15 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                 className={cn(
                     'max-w-[75%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed',
                     isClient
-                        ? 'bg-zinc-800 text-zinc-200 rounded-bl-md'
-                        : 'bg-indigo-600 text-white rounded-br-md'
+                        ? 'bg-slate-800 text-slate-200 rounded-bl-md'
+                        : 'bg-blue-600 text-white rounded-br-md'
                 )}
             >
                 <p className="whitespace-pre-wrap">{message.content}</p>
                 <div
                     className={cn(
                         'flex items-center justify-end gap-1 mt-1',
-                        isClient ? 'text-zinc-500' : 'text-indigo-200'
+                        isClient ? 'text-slate-500' : 'text-blue-200'
                     )}
                 >
                     <span className="text-[10px]">{time}</span>

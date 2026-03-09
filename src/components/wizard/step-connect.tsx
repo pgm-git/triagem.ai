@@ -39,18 +39,18 @@ export function StepConnect() {
         <div className="space-y-6">
             <div className="text-center space-y-2">
                 <h2 className="text-xl font-bold text-white">Tudo pronto!</h2>
-                <p className="text-sm text-zinc-400">Revise sua configuração e conecte o WhatsApp</p>
+                <p className="text-sm text-slate-400">Revise sua configuração e conecte o WhatsApp</p>
             </div>
 
             {/* Pre-checklist */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-3">
-                <h3 className="text-sm font-semibold text-zinc-300 mb-3">Checklist de configuração</h3>
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
+                <h3 className="text-sm font-semibold text-slate-300 mb-3">Checklist de configuração</h3>
                 {checklist.map((item, index) => (
                     <div key={index} className="flex items-center gap-3">
                         <CheckCircle2
-                            className={cn('w-5 h-5', item.ok ? 'text-emerald-400' : 'text-zinc-600')}
+                            className={cn('w-5 h-5', item.ok ? 'text-emerald-400' : 'text-slate-600')}
                         />
-                        <span className={cn('text-sm', item.ok ? 'text-zinc-300' : 'text-zinc-500')}>
+                        <span className={cn('text-sm', item.ok ? 'text-slate-300' : 'text-slate-500')}>
                             {item.label}
                         </span>
                     </div>
@@ -74,7 +74,7 @@ export function StepConnect() {
                         'w-full flex items-center justify-center gap-2 py-3 border rounded-xl font-medium transition-all cursor-pointer disabled:cursor-not-allowed',
                         testStatus === 'success'
                             ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                            : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50'
+                            : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800 disabled:opacity-50'
                     )}
                 >
                     {testStatus === 'testing' ? (

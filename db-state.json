@@ -1,0 +1,59 @@
+{
+  "users": [
+    {
+      "id": "af88ca47-fd8c-4dc2-9e71-f002144a2f48",
+      "aud": "authenticated",
+      "role": "authenticated",
+      "email": "paulo_gomesm@hotmail.com",
+      "email_confirmed_at": "2026-03-09T17:36:42.505218Z",
+      "phone": "",
+      "confirmation_sent_at": "2026-03-09T17:35:21.481071Z",
+      "confirmed_at": "2026-03-09T17:36:42.505218Z",
+      "last_sign_in_at": "2026-03-09T17:36:55.064441Z",
+      "app_metadata": {
+        "provider": "email",
+        "providers": [
+          "email"
+        ]
+      },
+      "user_metadata": {
+        "email": "paulo_gomesm@hotmail.com",
+        "email_verified": true,
+        "full_name": "Paulo CEO",
+        "phone_verified": false,
+        "sub": "af88ca47-fd8c-4dc2-9e71-f002144a2f48"
+      },
+      "identities": null,
+      "created_at": "2026-03-09T17:35:21.38622Z",
+      "updated_at": "2026-03-09T17:36:55.066597Z",
+      "is_anonymous": false
+    },
+    {
+      "id": "7e802d95-9ebd-4d06-b5ab-d3591d858802",
+      "aud": "authenticated",
+      "role": "authenticated",
+      "email": "final@trackerai.com",
+      "phone": "",
+      "confirmation_sent_at": "2026-03-09T13:59:42.153596Z",
+      "app_metadata": {
+        "provider": "email",
+        "providers": [
+          "email"
+        ]
+      },
+      "user_metadata": {
+        "email": "final@trackerai.com",
+        "email_verified": false,
+        "full_name": "Paulo Final",
+        "phone_verified": false,
+        "sub": "7e802d95-9ebd-4d06-b5ab-d3591d858802"
+      },
+      "identities": null,
+      "created_at": "2026-03-09T13:59:42.094235Z",
+      "updated_at": "2026-03-09T13:59:44.468704Z",
+      "is_anonymous": false
+    }
+  ],
+  "profiles": null,
+  "orgs": null
+}

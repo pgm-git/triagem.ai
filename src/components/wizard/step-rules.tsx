@@ -86,7 +86,7 @@ export function StepRules() {
         <div className="space-y-6">
             <div className="text-center space-y-2">
                 <h2 className="text-xl font-bold text-white">Ative regras de roteamento</h2>
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-slate-400">
                     Templates pré-configurados para começar rapidamente
                 </p>
             </div>
@@ -96,8 +96,8 @@ export function StepRules() {
                     <div
                         key={index}
                         className={cn(
-                            'bg-zinc-900 border rounded-xl overflow-hidden transition-all',
-                            template.is_active ? 'border-zinc-700' : 'border-zinc-800/50'
+                            'bg-slate-900 border rounded-xl overflow-hidden transition-all',
+                            template.is_active ? 'border-slate-700' : 'border-slate-800/50'
                         )}
                     >
                         {/* Header */}
@@ -108,11 +108,11 @@ export function StepRules() {
                             >
                                 <ChevronRight
                                     className={cn(
-                                        'w-4 h-4 text-zinc-500 transition-transform',
+                                        'w-4 h-4 text-slate-500 transition-transform',
                                         expandedIndex === index && 'rotate-90'
                                     )}
                                 />
-                                <span className={cn('text-sm font-medium', template.is_active ? 'text-white' : 'text-zinc-500')}>
+                                <span className={cn('text-sm font-medium', template.is_active ? 'text-white' : 'text-slate-500')}>
                                     {template.label}
                                 </span>
                             </button>
@@ -120,7 +120,7 @@ export function StepRules() {
                                 onClick={() => toggleTemplate(index)}
                                 className={cn(
                                     'w-10 h-6 rounded-full flex items-center px-0.5 transition-all cursor-pointer',
-                                    template.is_active ? 'bg-indigo-600 justify-end' : 'bg-zinc-700 justify-start'
+                                    template.is_active ? 'bg-blue-600 justify-end' : 'bg-slate-700 justify-start'
                                 )}
                             >
                                 <div className="w-5 h-5 bg-white rounded-full shadow transition-all" />
@@ -129,23 +129,23 @@ export function StepRules() {
 
                         {/* Expandable drawer */}
                         {expandedIndex === index && (
-                            <div className="px-4 pb-4 space-y-3 border-t border-zinc-800 pt-3">
+                            <div className="px-4 pb-4 space-y-3 border-t border-slate-800 pt-3">
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-medium text-zinc-400">Palavras-chave</label>
+                                    <label className="text-xs font-medium text-slate-400">Palavras-chave</label>
                                     <input
                                         type="text"
                                         value={template.keywords?.join(', ') || ''}
                                         onChange={(e) => updateKeywords(index, e.target.value)}
-                                        className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                                        className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-medium text-zinc-400">Mensagem de confirmação</label>
+                                    <label className="text-xs font-medium text-slate-400">Mensagem de confirmação</label>
                                     <textarea
                                         value={template.response_template || ''}
                                         onChange={(e) => updateResponse(index, e.target.value)}
                                         rows={2}
-                                        className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all resize-none"
+                                        className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all resize-none"
                                     />
                                 </div>
                             </div>
@@ -154,7 +154,7 @@ export function StepRules() {
                 ))}
             </div>
 
-            <p className="text-center text-xs text-zinc-600">
+            <p className="text-center text-xs text-slate-600">
                 {activeCount} regra{activeCount !== 1 ? 's' : ''} ativa{activeCount !== 1 ? 's' : ''}
                 {activeCount < 1 && ' — ative pelo menos 1 para continuar'}
             </p>

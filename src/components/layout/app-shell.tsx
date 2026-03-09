@@ -11,7 +11,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     return (
         <UserProvider>
-            <div className="min-h-screen bg-zinc-950">
+            <div className="min-h-screen bg-slate-950">
                 <AppSidebar />
                 <div
                     className={cn(

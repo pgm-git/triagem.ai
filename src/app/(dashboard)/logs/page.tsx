@@ -33,8 +33,8 @@ const eventLabels: Record<string, string> = {
 };
 
 const methodColors: Record<string, string> = {
-    auto: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-    manual: 'bg-zinc-700 text-zinc-300 border-zinc-600',
+    auto: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    manual: 'bg-slate-700 text-slate-300 border-slate-600',
     fallback: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
 };
 
@@ -50,23 +50,23 @@ export default function LogsPage() {
         <div className="space-y-6">
             <div>
                 <h1 className="text-2xl font-bold text-white">Logs</h1>
-                <p className="text-sm text-zinc-400 mt-1">Histórico de ações de roteamento</p>
+                <p className="text-sm text-slate-400 mt-1">Histórico de ações de roteamento</p>
             </div>
 
             {/* Filters */}
             <div className="flex items-center gap-3 flex-wrap">
                 <div className="relative flex-1 max-w-xs">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Buscar por contato..."
-                        className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                        className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                     />
                 </div>
                 <div className="flex items-center gap-1.5">
-                    <Filter className="w-4 h-4 text-zinc-500" />
+                    <Filter className="w-4 h-4 text-slate-500" />
                     {(['all', 'auto', 'manual', 'fallback'] as const).map((f) => (
                         <button
                             key={f}
@@ -74,8 +74,8 @@ export default function LogsPage() {
                             className={cn(
                                 'px-3 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer',
                                 filter === f
-                                    ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30'
-                                    : 'bg-zinc-900 text-zinc-500 border border-zinc-800 hover:border-zinc-700'
+                                    ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
+                                    : 'bg-slate-900 text-slate-500 border border-slate-800 hover:border-slate-700'
                             )}
                         >
                             {f === 'all' ? 'Todos' : f === 'auto' ? 'Auto' : f === 'manual' ? 'Manual' : 'Fallback'}
@@ -85,31 +85,31 @@ export default function LogsPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
                 <table className="w-full">
                     <thead>
-                        <tr className="border-b border-zinc-800">
-                            <th className="text-left text-[11px] font-semibold text-zinc-500 uppercase tracking-wider px-5 py-3">Hora</th>
-                            <th className="text-left text-[11px] font-semibold text-zinc-500 uppercase tracking-wider px-5 py-3">Contato</th>
-                            <th className="text-left text-[11px] font-semibold text-zinc-500 uppercase tracking-wider px-5 py-3">Evento</th>
-                            <th className="text-left text-[11px] font-semibold text-zinc-500 uppercase tracking-wider px-5 py-3">Destino</th>
-                            <th className="text-left text-[11px] font-semibold text-zinc-500 uppercase tracking-wider px-5 py-3">Método</th>
+                        <tr className="border-b border-slate-800">
+                            <th className="text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-5 py-3">Hora</th>
+                            <th className="text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-5 py-3">Contato</th>
+                            <th className="text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-5 py-3">Evento</th>
+                            <th className="text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-5 py-3">Destino</th>
+                            <th className="text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-5 py-3">Método</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-800/50">
+                    <tbody className="divide-y divide-slate-800/50">
                         {filtered.map((log) => (
-                            <tr key={log.id} className="hover:bg-zinc-800/30 transition-colors">
-                                <td className="px-5 py-3 text-xs text-zinc-500 font-mono">{log.time}</td>
+                            <tr key={log.id} className="hover:bg-slate-800/30 transition-colors">
+                                <td className="px-5 py-3 text-xs text-slate-500 font-mono">{log.time}</td>
                                 <td className="px-5 py-3">
                                     <span className="text-sm text-white">{log.contact}</span>
                                 </td>
-                                <td className="px-5 py-3 text-xs text-zinc-400">{eventLabels[log.event]}</td>
+                                <td className="px-5 py-3 text-xs text-slate-400">{eventLabels[log.event]}</td>
                                 <td className="px-5 py-3">
-                                    <div className="flex items-center gap-1.5 text-xs text-zinc-300">
+                                    <div className="flex items-center gap-1.5 text-xs text-slate-300">
                                         {log.from && (
                                             <>
-                                                <span className="text-zinc-500">{log.from}</span>
-                                                <ArrowRight className="w-3 h-3 text-zinc-600" />
+                                                <span className="text-slate-500">{log.from}</span>
+                                                <ArrowRight className="w-3 h-3 text-slate-600" />
                                             </>
                                         )}
                                         <span>{log.to}</span>
@@ -125,7 +125,7 @@ export default function LogsPage() {
                     </tbody>
                 </table>
                 {filtered.length === 0 && (
-                    <div className="py-12 text-center text-sm text-zinc-500">Nenhum log encontrado</div>
+                    <div className="py-12 text-center text-sm text-slate-500">Nenhum log encontrado</div>
                 )}
             </div>
         </div>

@@ -93,10 +93,10 @@ export default function SetupPage() {
         <div className="space-y-8">
             {/* Header */}
             <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-                    <MessageSquareMore className="w-5 h-5 text-indigo-400" />
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                    <MessageSquareMore className="w-5 h-5 text-blue-400" />
                 </div>
-                <h1 className="text-lg font-semibold text-zinc-300">Configurar TrackerAi Pro</h1>
+                <h1 className="text-lg font-semibold text-slate-300">Configurar TriaGO</h1>
             </div>
 
             {/* Step indicator */}
@@ -110,11 +110,11 @@ export default function SetupPage() {
             <div className="min-h-[320px]">{renderStep()}</div>
 
             {/* Footer buttons */}
-            <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
+            <div className="flex items-center justify-between pt-4 border-t border-slate-800">
                 {currentStep > 1 ? (
                     <button
                         onClick={handleBack}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
                     >
                         <ArrowLeft className="w-4 h-4" />
                         Voltar
@@ -130,8 +130,8 @@ export default function SetupPage() {
                         className={cn(
                             'flex items-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed',
                             canAdvance()
-                                ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                                : 'bg-zinc-800 text-zinc-500'
+                                ? 'bg-blue-600 hover:bg-blue-500 text-white'
+                                : 'bg-slate-800 text-slate-500'
                         )}
                     >
                         Próximo
@@ -141,10 +141,10 @@ export default function SetupPage() {
                     <button
                         onClick={handleActivate}
                         disabled={isActivating}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white text-sm font-medium rounded-lg transition-all cursor-pointer"
+                        className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-sm font-medium rounded-lg transition-all cursor-pointer"
                     >
                         {isActivating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                        {isActivating ? 'Salvando...' : 'Ativar TrackerAi Pro'}
+                        {isActivating ? 'Salvando...' : 'Ativar TriaGO'}
                     </button>
                 )}
             </div>

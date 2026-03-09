@@ -32,7 +32,7 @@ export function StepRoutingType() {
         <div className="space-y-6">
             <div className="text-center space-y-2">
                 <h2 className="text-xl font-bold text-white">Como deseja rotear as conversas?</h2>
-                <p className="text-sm text-zinc-400">Escolha o tipo de roteamento para suas mensagens</p>
+                <p className="text-sm text-slate-400">Escolha o tipo de roteamento para suas mensagens</p>
             </div>
 
             <div className="space-y-3">
@@ -45,28 +45,28 @@ export function StepRoutingType() {
                             className={cn(
                                 'w-full flex items-start gap-4 p-4 rounded-xl border text-left transition-all duration-200 cursor-pointer',
                                 isSelected
-                                    ? 'bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/30'
-                                    : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/80'
+                                    ? 'bg-blue-500/10 border-blue-500/50 ring-1 ring-blue-500/30'
+                                    : 'bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'
                             )}
                         >
                             <div
                                 className={cn(
                                     'w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors',
-                                    isSelected ? 'bg-indigo-500/20 text-indigo-400' : 'bg-zinc-800 text-zinc-500'
+                                    isSelected ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-slate-500'
                                 )}
                             >
                                 <option.icon className="w-5 h-5" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className={cn('font-semibold text-sm', isSelected ? 'text-indigo-300' : 'text-white')}>
+                                <p className={cn('font-semibold text-sm', isSelected ? 'text-blue-300' : 'text-white')}>
                                     {option.title}
                                 </p>
-                                <p className="text-xs text-zinc-500 mt-0.5">{option.description}</p>
+                                <p className="text-xs text-slate-500 mt-0.5">{option.description}</p>
                             </div>
                             <div
                                 className={cn(
                                     'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all',
-                                    isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-zinc-600'
+                                    isSelected ? 'border-blue-500 bg-blue-500' : 'border-slate-600'
                                 )}
                             >
                                 {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
@@ -76,7 +76,7 @@ export function StepRoutingType() {
                 })}
             </div>
 
-            <p className="text-center text-xs text-zinc-600">Você pode mudar depois nas configurações.</p>
+            <p className="text-center text-xs text-slate-600">Você pode mudar depois nas configurações.</p>
         </div>
     );
 }

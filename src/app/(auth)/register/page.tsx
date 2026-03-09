@@ -59,19 +59,19 @@ export default function RegisterPage() {
         <div className="space-y-6">
             {/* Logo */}
             <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 mb-2">
-                    <MessageSquareMore className="w-6 h-6 text-indigo-400" />
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 mb-2">
+                    <MessageSquareMore className="w-6 h-6 text-blue-400" />
                 </div>
                 <h1 className="text-2xl font-bold text-white">Criar Conta</h1>
-                <p className="text-sm text-zinc-400">Configure seu TrackerAi Pro em minutos</p>
+                <p className="text-sm text-slate-400">Configure seu TriaGO em minutos</p>
             </div>
 
             {/* Card */}
-            <div className="bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 rounded-2xl p-6 shadow-2xl">
+            <div className="bg-slate-900/80 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 shadow-2xl">
                 <form onSubmit={handleRegister} className="space-y-4">
                     {/* Name */}
                     <div className="space-y-2">
-                        <label htmlFor="fullName" className="text-sm font-medium text-zinc-300">
+                        <label htmlFor="fullName" className="text-sm font-medium text-slate-300">
                             Nome completo
                         </label>
                         <input
@@ -81,13 +81,13 @@ export default function RegisterPage() {
                             onChange={(e) => setFullName(e.target.value)}
                             placeholder="Seu nome"
                             required
-                            className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm"
+                            className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm"
                         />
                     </div>
 
                     {/* Email */}
                     <div className="space-y-2">
-                        <label htmlFor="email" className="text-sm font-medium text-zinc-300">
+                        <label htmlFor="email" className="text-sm font-medium text-slate-300">
                             Email
                         </label>
                         <input
@@ -97,13 +97,13 @@ export default function RegisterPage() {
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="seu@email.com"
                             required
-                            className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm"
+                            className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm"
                         />
                     </div>
 
                     {/* Password */}
                     <div className="space-y-2">
-                        <label htmlFor="password" className="text-sm font-medium text-zinc-300">
+                        <label htmlFor="password" className="text-sm font-medium text-slate-300">
                             Senha
                         </label>
                         <div className="relative">
@@ -115,12 +115,12 @@ export default function RegisterPage() {
                                 placeholder="Mínimo 6 caracteres"
                                 required
                                 minLength={6}
-                                className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm pr-10"
+                                className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm pr-10"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
                             >
                                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
@@ -138,7 +138,7 @@ export default function RegisterPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-600/50 text-white font-medium rounded-lg transition-all text-sm cursor-pointer disabled:cursor-not-allowed"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 text-white font-medium rounded-lg transition-all text-sm cursor-pointer disabled:cursor-not-allowed"
                     >
                         {loading ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -153,9 +153,9 @@ export default function RegisterPage() {
             </div>
 
             {/* Login link */}
-            <p className="text-center text-sm text-zinc-500">
+            <p className="text-center text-sm text-slate-500">
                 Já tem conta?{' '}
-                <Link href="/login" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
+                <Link href="/login" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
                     Fazer login
                 </Link>
             </p>

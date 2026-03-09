@@ -59,7 +59,7 @@ const providerInfo: Record<WhatsAppProvider, {
     cons: string[];
 }> = {
     uazapi: {
-        name: 'UazAPI',
+        name: 'WhatsappFast',
         description: 'API não-oficial via QR Code',
         icon: '⚡',
         color: 'bg-amber-500/10 text-amber-400',
@@ -73,11 +73,11 @@ const providerInfo: Record<WhatsAppProvider, {
         cons: [
             'Pode cair e precisar reconectar',
             'Risco de ban pela Meta',
-            'Depende de servidor UazAPI',
+            'Depende do servidor WhatsappFast',
         ],
     },
     meta_cloud: {
-        name: 'Meta Cloud API',
+        name: 'Whatsapp Business',
         description: 'API oficial do WhatsApp Business',
         icon: '🛡️',
         color: 'bg-blue-500/10 text-blue-400',
@@ -210,7 +210,7 @@ export default function CanaisPage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center p-16">
-                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
             </div>
         );
     }
@@ -221,13 +221,13 @@ export default function CanaisPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-white">Canais WhatsApp</h1>
-                    <p className="text-sm text-zinc-400 mt-1">
+                    <p className="text-sm text-slate-400 mt-1">
                         {instances.filter((i) => i.status === 'connected').length} conectado{instances.filter((i) => i.status === 'connected').length !== 1 ? 's' : ''} · {instances.length} instância{instances.length !== 1 ? 's' : ''}
                     </p>
                 </div>
                 <button
                     onClick={openDrawer}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-all cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-all cursor-pointer"
                 >
                     <Plus className="w-4 h-4" />
                     Nova Conexão
@@ -242,12 +242,12 @@ export default function CanaisPage() {
                     return (
                         <div
                             key={instance.id}
-                            className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden"
+                            className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden"
                         >
                             <div className="p-5">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-14 h-14 rounded-xl bg-zinc-800 flex items-center justify-center text-2xl">
+                                        <div className="w-14 h-14 rounded-xl bg-slate-800 flex items-center justify-center text-2xl">
                                             {providerData.icon}
                                         </div>
                                         <div>
@@ -257,7 +257,7 @@ export default function CanaisPage() {
                                                     {providerData.name}
                                                 </span>
                                             </div>
-                                            <p className="text-sm text-zinc-500 mt-0.5">
+                                            <p className="text-sm text-slate-500 mt-0.5">
                                                 {instance.phone_number || 'Número não configurado'}
                                             </p>
                                         </div>
@@ -275,21 +275,21 @@ export default function CanaisPage() {
                                 </div>
 
                                 {/* Stats */}
-                                <div className="grid grid-cols-4 gap-4 mt-5 pt-5 border-t border-zinc-800">
+                                <div className="grid grid-cols-4 gap-4 mt-5 pt-5 border-t border-slate-800">
                                     <div>
-                                        <p className="text-xs text-zinc-500">Provider</p>
+                                        <p className="text-xs text-slate-500">Provider</p>
                                         <p className="text-sm font-semibold text-white mt-0.5">{providerData.name}</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-zinc-500">Mensagens hoje</p>
+                                        <p className="text-xs text-slate-500">Mensagens hoje</p>
                                         <p className="text-lg font-bold text-white mt-0.5">48</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-zinc-500">Conversas ativas</p>
+                                        <p className="text-xs text-slate-500">Conversas ativas</p>
                                         <p className="text-lg font-bold text-white mt-0.5">3</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-zinc-500">Webhook</p>
+                                        <p className="text-xs text-slate-500">Webhook</p>
                                         <div className="flex items-center gap-1 mt-1">
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                                             <span className="text-xs text-emerald-400 font-medium">Ativo</span>
@@ -305,12 +305,12 @@ export default function CanaisPage() {
                                             Conectar
                                         </button>
                                     )}
-                                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-all cursor-pointer">
+                                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all cursor-pointer">
                                         <RefreshCw className="w-3.5 h-3.5" />
                                         Reconectar
                                     </button>
                                     {instance.provider === 'uazapi' && (
-                                        <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-all cursor-pointer">
+                                        <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all cursor-pointer">
                                             <QrCode className="w-3.5 h-3.5" />
                                             QR Code
                                         </button>
@@ -328,14 +328,14 @@ export default function CanaisPage() {
 
             {instances.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center mb-4">
-                        <Smartphone className="w-8 h-8 text-zinc-600" />
+                    <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mb-4">
+                        <Smartphone className="w-8 h-8 text-slate-600" />
                     </div>
-                    <h3 className="text-lg font-semibold text-zinc-300">Nenhum canal conectado</h3>
-                    <p className="text-sm text-zinc-500 mt-1">Conecte seu WhatsApp para começar a receber mensagens</p>
+                    <h3 className="text-lg font-semibold text-slate-300">Nenhum canal conectado</h3>
+                    <p className="text-sm text-slate-500 mt-1">Conecte seu WhatsApp para começar a receber mensagens</p>
                     <button
                         onClick={openDrawer}
-                        className="mt-4 flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-all cursor-pointer"
+                        className="mt-4 flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-all cursor-pointer"
                     >
                         <Plus className="w-4 h-4" />
                         Conectar WhatsApp
@@ -350,14 +350,14 @@ export default function CanaisPage() {
                 <>
                     <div className="fixed inset-0 bg-black/60 z-40 animate-in fade-in duration-200" onClick={() => setShowNewDrawer(false)} />
 
-                    <div className="fixed right-0 top-0 h-screen w-full max-w-lg bg-zinc-950 border-l border-zinc-800 z-50 flex flex-col animate-in slide-in-from-right duration-200">
+                    <div className="fixed right-0 top-0 h-screen w-full max-w-lg bg-slate-950 border-l border-slate-800 z-50 flex flex-col animate-in slide-in-from-right duration-200">
                         {/* Header */}
-                        <div className="p-5 border-b border-zinc-800">
+                        <div className="p-5 border-b border-slate-800">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-lg font-semibold text-white">Nova Conexão WhatsApp</h2>
                                 <button
                                     onClick={() => setShowNewDrawer(false)}
-                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all cursor-pointer"
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-all cursor-pointer"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -372,18 +372,18 @@ export default function CanaisPage() {
                                             <div className={cn(
                                                 'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all',
                                                 stepIndex <= currentIndex
-                                                    ? 'bg-indigo-600 text-white'
-                                                    : 'bg-zinc-800 text-zinc-600'
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'bg-slate-800 text-slate-600'
                                             )}>
                                                 {stepIndex < currentIndex ? '✓' : stepIndex + 1}
                                             </div>
                                             <span className={cn(
                                                 'text-xs font-medium',
-                                                stepIndex <= currentIndex ? 'text-zinc-300' : 'text-zinc-600'
+                                                stepIndex <= currentIndex ? 'text-slate-300' : 'text-slate-600'
                                             )}>
                                                 {step}
                                             </span>
-                                            {i < 2 && <div className={cn('flex-1 h-px', stepIndex < currentIndex ? 'bg-indigo-600' : 'bg-zinc-800')} />}
+                                            {i < 2 && <div className={cn('flex-1 h-px', stepIndex < currentIndex ? 'bg-blue-600' : 'bg-slate-800')} />}
                                         </div>
                                     );
                                 })}
@@ -395,14 +395,14 @@ export default function CanaisPage() {
                             {/* ─── Step 1: Select Provider ─── */}
                             {connectStep === 'select' && (
                                 <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-200">
-                                    <p className="text-sm text-zinc-400">Escolha como conectar seu WhatsApp:</p>
+                                    <p className="text-sm text-slate-400">Escolha como conectar seu WhatsApp:</p>
 
                                     {(Object.entries(providerInfo) as [WhatsAppProvider, typeof providerInfo.uazapi][]).map(([key, info]) => (
                                         <button
                                             key={key}
                                             onClick={() => selectProvider(key)}
                                             className={cn(
-                                                'w-full text-left bg-zinc-900 border rounded-xl p-5 transition-all cursor-pointer hover:scale-[1.01]',
+                                                'w-full text-left bg-slate-900 border rounded-xl p-5 transition-all cursor-pointer hover:scale-[1.01]',
                                                 info.borderColor
                                             )}
                                         >
@@ -410,9 +410,9 @@ export default function CanaisPage() {
                                                 <span className="text-2xl">{info.icon}</span>
                                                 <div>
                                                     <h3 className="font-semibold text-white">{info.name}</h3>
-                                                    <p className="text-xs text-zinc-500">{info.description}</p>
+                                                    <p className="text-xs text-slate-500">{info.description}</p>
                                                 </div>
-                                                <ArrowRight className="w-4 h-4 text-zinc-600 ml-auto" />
+                                                <ArrowRight className="w-4 h-4 text-slate-600 ml-auto" />
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-3 mt-3">
@@ -421,7 +421,7 @@ export default function CanaisPage() {
                                                     {info.pros.map((pro) => (
                                                         <div key={pro} className="flex items-start gap-1.5">
                                                             <CheckCircle2 className="w-3 h-3 text-emerald-500 mt-0.5 shrink-0" />
-                                                            <span className="text-[11px] text-zinc-400">{pro}</span>
+                                                            <span className="text-[11px] text-slate-400">{pro}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -430,7 +430,7 @@ export default function CanaisPage() {
                                                     {info.cons.map((con) => (
                                                         <div key={con} className="flex items-start gap-1.5">
                                                             <AlertTriangle className="w-3 h-3 text-red-500 mt-0.5 shrink-0" />
-                                                            <span className="text-[11px] text-zinc-400">{con}</span>
+                                                            <span className="text-[11px] text-slate-400">{con}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -445,17 +445,17 @@ export default function CanaisPage() {
                                 <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-200">
                                     <div className="flex items-center gap-2 mb-2">
                                         <span className="text-xl">⚡</span>
-                                        <h3 className="text-sm font-semibold text-white">Configurar UazAPI</h3>
+                                        <h3 className="text-sm font-semibold text-white">Configurar WhatsappFast</h3>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-zinc-300">Nome da instância</label>
+                                        <label className="text-sm font-medium text-slate-300">Nome da instância</label>
                                         <input
                                             type="text"
                                             value={formName}
                                             onChange={(e) => setFormName(e.target.value)}
                                             placeholder="Ex: Atendimento Principal"
-                                            className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                                            className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                                         />
                                     </div>
 
@@ -494,49 +494,49 @@ export default function CanaisPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-zinc-300">Nome da instância</label>
+                                        <label className="text-sm font-medium text-slate-300">Nome da instância</label>
                                         <input
                                             type="text"
                                             value={formName}
                                             onChange={(e) => setFormName(e.target.value)}
                                             placeholder="Ex: WhatsApp Business"
-                                            className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                                            className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                                         />
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-zinc-300">Access Token (permanente)</label>
+                                        <label className="text-sm font-medium text-slate-300">Access Token (permanente)</label>
                                         <input
                                             type="password"
                                             value={metaAccessToken}
                                             onChange={(e) => setMetaAccessToken(e.target.value)}
                                             placeholder="EAAxxxxxxxxxxxxxxxx"
-                                            className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm font-mono placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                                            className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm font-mono placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                                         />
-                                        <p className="text-[10px] text-zinc-600">
-                                            Use um System User Token permanente. <a href="https://developers.facebook.com/docs/whatsapp/business-management-api/get-started" target="_blank" className="text-indigo-400 hover:underline">Como obter →</a>
+                                        <p className="text-[10px] text-slate-600">
+                                            Use um System User Token permanente. <a href="https://developers.facebook.com/docs/whatsapp/business-management-api/get-started" target="_blank" className="text-blue-400 hover:underline">Como obter →</a>
                                         </p>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-zinc-300">Phone Number ID</label>
+                                        <label className="text-sm font-medium text-slate-300">Phone Number ID</label>
                                         <input
                                             type="text"
                                             value={metaPhoneNumberId}
                                             onChange={(e) => setMetaPhoneNumberId(e.target.value)}
                                             placeholder="123456789012345"
-                                            className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm font-mono placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                                            className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm font-mono placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                                         />
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-zinc-300">Business Account ID <span className="text-zinc-600">(opcional)</span></label>
+                                        <label className="text-sm font-medium text-slate-300">Business Account ID <span className="text-slate-600">(opcional)</span></label>
                                         <input
                                             type="text"
                                             value={metaBusinessId}
                                             onChange={(e) => setMetaBusinessId(e.target.value)}
                                             placeholder="987654321098765"
-                                            className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm font-mono placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                                            className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm font-mono placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                                         />
                                     </div>
 
@@ -548,11 +548,11 @@ export default function CanaisPage() {
                                                 <p className="text-[11px] text-blue-200/60 mt-0.5">
                                                     Configure no Meta App Dashboard apontando para:
                                                 </p>
-                                                <div className="flex items-center gap-2 mt-2 bg-zinc-800 rounded-lg px-3 py-1.5">
-                                                    <code className="text-[11px] text-zinc-300 flex-1 truncate">
+                                                <div className="flex items-center gap-2 mt-2 bg-slate-800 rounded-lg px-3 py-1.5">
+                                                    <code className="text-[11px] text-slate-300 flex-1 truncate">
                                                         https://seu-dominio.com/api/webhooks/whatsapp/{'<id>'}
                                                     </code>
-                                                    <button className="text-zinc-500 hover:text-zinc-300 cursor-pointer">
+                                                    <button className="text-slate-500 hover:text-slate-300 cursor-pointer">
                                                         <Copy className="w-3 h-3" />
                                                     </button>
                                                 </div>
@@ -563,7 +563,7 @@ export default function CanaisPage() {
                                     <a
                                         href="https://developers.facebook.com/apps"
                                         target="_blank"
-                                        className="flex items-center justify-center gap-2 py-2 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                                        className="flex items-center justify-center gap-2 py-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
                                     >
                                         <ExternalLink className="w-3.5 h-3.5" />
                                         Abrir Meta for Developers
@@ -586,7 +586,7 @@ export default function CanaisPage() {
                                             </p>
                                             <button
                                                 onClick={() => { setSubmitError(null); setConnectStep('form'); }}
-                                                className="mt-4 flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-lg transition-all cursor-pointer"
+                                                className="mt-4 flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg transition-all cursor-pointer"
                                             >
                                                 <RefreshCw className="w-4 h-4" />
                                                 Tentar novamente
@@ -596,9 +596,9 @@ export default function CanaisPage() {
                                         <>
                                             {isSubmitting ? (
                                                 <>
-                                                    <Loader2 className="w-16 h-16 text-indigo-400 animate-spin mb-6" />
+                                                    <Loader2 className="w-16 h-16 text-blue-400 animate-spin mb-6" />
                                                     <h3 className="text-lg font-semibold text-white mb-1">Criando instância...</h3>
-                                                    <p className="text-sm text-zinc-400">Gerando QR Code na UazAPI</p>
+                                                    <p className="text-sm text-slate-400">Gerando QR Code no WhatsappFast</p>
                                                 </>
                                             ) : qrCodeData ? (
                                                 <>
@@ -611,12 +611,12 @@ export default function CanaisPage() {
                                                         />
                                                     </div>
                                                     <h3 className="text-lg font-semibold text-white mb-1">Escaneie o QR Code</h3>
-                                                    <p className="text-sm text-zinc-400 text-center max-w-xs">
+                                                    <p className="text-sm text-slate-400 text-center max-w-xs">
                                                         Abra o WhatsApp no celular → Configurações → Aparelhos conectados → Conectar aparelho
                                                     </p>
                                                     <div className="flex items-center gap-2 mt-4">
-                                                        <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
-                                                        <span className="text-xs text-indigo-400">Aguardando conexão...</span>
+                                                        <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+                                                        <span className="text-xs text-blue-400">Aguardando conexão...</span>
                                                     </div>
                                                 </>
                                             ) : (
@@ -625,7 +625,7 @@ export default function CanaisPage() {
                                                         <AlertCircle className="w-10 h-10 text-amber-400" />
                                                     </div>
                                                     <h3 className="text-lg font-semibold text-white mb-1">Instância criada</h3>
-                                                    <p className="text-sm text-zinc-400 text-center max-w-xs">
+                                                    <p className="text-sm text-slate-400 text-center max-w-xs">
                                                         Instância criada mas QR Code não foi retornado. Clique em &quot;QR Code&quot; no card da instância.
                                                     </p>
                                                 </>
@@ -643,7 +643,7 @@ export default function CanaisPage() {
                                             <h3 className="text-lg font-semibold text-white mb-1">
                                                 {isSubmitting ? 'Validando token...' : 'Conectado!'}
                                             </h3>
-                                            <p className="text-sm text-zinc-400 text-center max-w-xs">
+                                            <p className="text-sm text-slate-400 text-center max-w-xs">
                                                 {isSubmitting
                                                     ? 'Verificando credenciais com a Meta...'
                                                     : 'Sua instância foi conectada com sucesso.'
@@ -656,11 +656,11 @@ export default function CanaisPage() {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-5 border-t border-zinc-800 flex items-center gap-3">
+                        <div className="p-5 border-t border-slate-800 flex items-center gap-3">
                             {connectStep === 'form' && (
                                 <button
                                     onClick={() => setConnectStep('select')}
-                                    className="flex-1 px-4 py-2.5 text-sm font-medium text-zinc-400 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-all cursor-pointer"
+                                    className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-400 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all cursor-pointer"
                                 >
                                     Voltar
                                 </button>
@@ -668,7 +668,7 @@ export default function CanaisPage() {
                             {connectStep === 'select' && (
                                 <button
                                     onClick={() => setShowNewDrawer(false)}
-                                    className="flex-1 px-4 py-2.5 text-sm font-medium text-zinc-400 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-all cursor-pointer"
+                                    className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-400 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all cursor-pointer"
                                 >
                                     Cancelar
                                 </button>
@@ -680,7 +680,7 @@ export default function CanaisPage() {
                                         isSubmitting ||
                                         (selectedProvider === 'meta_cloud' && (!metaAccessToken || !metaPhoneNumberId))
                                     }
-                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-zinc-600 rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed"
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed"
                                 >
                                     <Zap className="w-4 h-4" />
                                     {selectedProvider === 'uazapi' ? 'Criar e Gerar QR Code' : 'Validar e Conectar'}
@@ -689,7 +689,7 @@ export default function CanaisPage() {
                             {connectStep === 'connecting' && !isSubmitting && (
                                 <button
                                     onClick={() => setShowNewDrawer(false)}
-                                    className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-all cursor-pointer"
+                                    className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-all cursor-pointer"
                                 >
                                     Fechar
                                 </button>

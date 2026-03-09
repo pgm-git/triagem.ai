@@ -30,7 +30,7 @@ export function StepFallback() {
         <div className="space-y-6">
             <div className="text-center space-y-2">
                 <h2 className="text-xl font-bold text-white">Configure o fallback</h2>
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-slate-400">
                     Quando a automação não entender a mensagem, o cliente será encaminhado para este setor
                 </p>
             </div>
@@ -47,18 +47,18 @@ export function StepFallback() {
             <div className="space-y-4">
                 {/* Sector selector */}
                 <div className="space-y-2">
-                    <label htmlFor="fallback-sector" className="text-sm font-medium text-zinc-300">
+                    <label htmlFor="fallback-sector" className="text-sm font-medium text-slate-300">
                         Setor de triagem
                     </label>
                     <select
                         id="fallback-sector"
                         value={sectorId}
                         onChange={(e) => setSectorId(e.target.value)}
-                        className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+                        className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                     >
-                        <option value="" className="bg-zinc-900">Selecione um setor...</option>
+                        <option value="" className="bg-slate-900">Selecione um setor...</option>
                         {sectors.map((sector, i) => (
-                            <option key={i} value={sector.name} className="bg-zinc-900">
+                            <option key={i} value={sector.name} className="bg-slate-900">
                                 {sector.icon} {sector.name}
                             </option>
                         ))}
@@ -67,7 +67,7 @@ export function StepFallback() {
 
                 {/* Fallback message */}
                 <div className="space-y-2">
-                    <label htmlFor="fallback-message" className="text-sm font-medium text-zinc-300">
+                    <label htmlFor="fallback-message" className="text-sm font-medium text-slate-300">
                         Mensagem padrão
                     </label>
                     <textarea
@@ -76,9 +76,9 @@ export function StepFallback() {
                         onChange={(e) => setMessage(e.target.value)}
                         rows={3}
                         placeholder="Mensagem enviada ao cliente quando nenhuma regra é acionada"
-                        className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all resize-none"
+                        className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all resize-none"
                     />
-                    <p className="text-xs text-zinc-600">Esta mensagem será enviada automaticamente ao cliente.</p>
+                    <p className="text-xs text-slate-600">Esta mensagem será enviada automaticamente ao cliente.</p>
                 </div>
             </div>
         </div>

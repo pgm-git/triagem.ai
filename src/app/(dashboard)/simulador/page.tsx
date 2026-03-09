@@ -93,16 +93,16 @@ export default function SimuladorPage() {
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                    <Sparkles className="w-6 h-6 text-indigo-400" />
+                    <Sparkles className="w-6 h-6 text-blue-400" />
                     Simulador de Roteamento
                 </h1>
-                <p className="text-sm text-zinc-400 mt-1">
+                <p className="text-sm text-slate-400 mt-1">
                     Digite uma mensagem como se fosse um cliente WhatsApp e veja para qual setor ela seria direcionada.
                 </p>
             </div>
 
             {/* Input area */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
                 <div className="flex gap-3">
                     <input
                         ref={inputRef}
@@ -111,7 +111,7 @@ export default function SimuladorPage() {
                         onChange={(e) => setMessage(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && simulate()}
                         placeholder="Ex: Preciso do boleto desse mês..."
-                        className="flex-1 px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-xl text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+                        className="flex-1 px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
                         disabled={loading}
                         id="simulator-input"
                     />
@@ -121,8 +121,8 @@ export default function SimuladorPage() {
                         className={cn(
                             'px-5 py-3 rounded-xl font-medium text-sm flex items-center gap-2 transition-all cursor-pointer',
                             message.trim() && !loading
-                                ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/20'
-                                : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                                ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/20'
+                                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                         )}
                         id="simulator-send"
                     >
@@ -137,13 +137,13 @@ export default function SimuladorPage() {
 
                 {/* Quick examples */}
                 <div className="space-y-2">
-                    <p className="text-xs font-medium text-zinc-500">Exemplos rápidos:</p>
+                    <p className="text-xs font-medium text-slate-500">Exemplos rápidos:</p>
                     <div className="flex flex-wrap gap-2">
                         {exampleMessages.map((ex) => (
                             <button
                                 key={ex}
                                 onClick={() => simulate(ex)}
-                                className="px-3 py-1.5 text-xs bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 rounded-lg hover:text-white hover:border-zinc-600 hover:bg-zinc-800 transition-all cursor-pointer"
+                                className="px-3 py-1.5 text-xs bg-slate-800/50 border border-slate-700/50 text-slate-400 rounded-lg hover:text-white hover:border-slate-600 hover:bg-slate-800 transition-all cursor-pointer"
                                 disabled={loading}
                             >
                                 &ldquo;{ex}&rdquo;
@@ -157,12 +157,12 @@ export default function SimuladorPage() {
             {history.length > 0 && (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-sm font-semibold text-zinc-300">
+                        <h2 className="text-sm font-semibold text-slate-300">
                             Resultados ({history.length})
                         </h2>
                         <button
                             onClick={() => setHistory([])}
-                            className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
+                            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
                         >
                             <RotateCcw className="w-3 h-3" />
                             Limpar
@@ -183,12 +183,12 @@ export default function SimuladorPage() {
                             >
                                 {/* Message */}
                                 <div className="flex items-start gap-3 mb-3">
-                                    <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center shrink-0">
+                                    <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center shrink-0">
                                         💬
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm text-white font-medium">&ldquo;{entry.input}&rdquo;</p>
-                                        <p className="text-[10px] text-zinc-500 mt-0.5">
+                                        <p className="text-[10px] text-slate-500 mt-0.5">
                                             {new Date(entry.timestamp).toLocaleTimeString('pt-BR')}
                                         </p>
                                     </div>
@@ -196,10 +196,10 @@ export default function SimuladorPage() {
 
                                 {/* Arrow */}
                                 <div className="flex items-center gap-2 ml-4 mb-3">
-                                    <div className="w-px h-4 bg-zinc-700" />
-                                    <ArrowRight className="w-3 h-3 text-zinc-600" />
+                                    <div className="w-px h-4 bg-slate-700" />
+                                    <ArrowRight className="w-3 h-3 text-slate-600" />
                                     {entry.result.matchedKeyword && (
-                                        <span className="px-2 py-0.5 text-[10px] font-medium bg-indigo-500/10 text-indigo-300 rounded-md border border-indigo-500/20">
+                                        <span className="px-2 py-0.5 text-[10px] font-medium bg-blue-500/10 text-blue-300 rounded-md border border-blue-500/20">
                                             keyword: &ldquo;{entry.result.matchedKeyword}&rdquo;
                                         </span>
                                     )}
@@ -233,12 +233,12 @@ export default function SimuladorPage() {
                                             </span>
                                         </div>
                                         {entry.result.responseTemplate && (
-                                            <p className="text-xs text-zinc-400 mt-1 italic">
+                                            <p className="text-xs text-slate-400 mt-1 italic">
                                                 &ldquo;{entry.result.responseTemplate}&rdquo;
                                             </p>
                                         )}
                                         {entry.result.ruleName && (
-                                            <p className="text-[10px] text-zinc-500 mt-1">
+                                            <p className="text-[10px] text-slate-500 mt-1">
                                                 Regra: {entry.result.ruleName} (prioridade: {
                                                     rules.find((r) => r.id === entry.result.ruleId)?.priority ?? '?'
                                                 })
@@ -254,18 +254,18 @@ export default function SimuladorPage() {
 
             {/* Active rules reference */}
             {rules.length > 0 && (
-                <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-4">
-                    <h3 className="text-xs font-semibold text-zinc-400 mb-3 uppercase tracking-wider">
+                <div className="bg-slate-900/50 border border-slate-800/50 rounded-xl p-4">
+                    <h3 className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">
                         Regras ativas no motor
                     </h3>
                     <div className="space-y-2">
                         {rules.filter((r) => r.is_active).map((rule) => (
                             <div key={rule.id} className="flex items-center gap-3 text-xs">
-                                <span className="text-zinc-500 font-mono w-4 text-right">{rule.priority}</span>
+                                <span className="text-slate-500 font-mono w-4 text-right">{rule.priority}</span>
                                 <span className="text-white font-medium w-32 truncate">{rule.name}</span>
                                 <div className="flex gap-1 flex-wrap">
                                     {rule.keywords.map((kw) => (
-                                        <span key={kw} className="px-1.5 py-0.5 bg-zinc-800 text-zinc-400 rounded text-[10px]">
+                                        <span key={kw} className="px-1.5 py-0.5 bg-slate-800 text-slate-400 rounded text-[10px]">
                                             {kw}
                                         </span>
                                     ))}

@@ -95,8 +95,8 @@ export function PersonaConfig() {
             {/* Trait Grid */}
             <div>
                 <div className="flex items-center justify-between mb-3">
-                    <label className="text-sm font-medium text-zinc-300">Selecione até 2 traits</label>
-                    <span className="text-[10px] text-zinc-600">{selected.length} de 2 selecionado{selected.length !== 1 ? 's' : ''}</span>
+                    <label className="text-sm font-medium text-slate-300">Selecione até 2 traits</label>
+                    <span className="text-[10px] text-slate-600">{selected.length} de 2 selecionado{selected.length !== 1 ? 's' : ''}</span>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {TRAITS.map((trait) => {
@@ -108,18 +108,18 @@ export function PersonaConfig() {
                                 className={cn(
                                     'group relative flex flex-col items-center gap-2 py-5 px-3 rounded-xl border-2 transition-all duration-200 cursor-pointer',
                                     isSelected
-                                        ? 'border-indigo-500 bg-indigo-500/5 shadow-[0_0_24px_-4px_rgba(99,102,241,0.3)]'
-                                        : 'border-zinc-800 bg-zinc-900 hover:border-zinc-700 hover:bg-zinc-800/50'
+                                        ? 'border-blue-500 bg-blue-500/5 shadow-[0_0_24px_-4px_rgba(99,102,241,0.3)]'
+                                        : 'border-slate-800 bg-slate-900 hover:border-slate-700 hover:bg-slate-800/50'
                                 )}
                                 style={{ transform: isSelected ? 'scale(1.02)' : 'scale(1)' }}
                             >
                                 <span className="text-3xl transition-transform duration-200 group-hover:scale-110">{trait.emoji}</span>
-                                <span className={cn('text-sm font-semibold transition-colors', isSelected ? 'text-indigo-300' : 'text-zinc-300')}>
+                                <span className={cn('text-sm font-semibold transition-colors', isSelected ? 'text-blue-300' : 'text-slate-300')}>
                                     {trait.label}
                                 </span>
-                                <span className="text-[10px] text-zinc-500 text-center">{trait.description}</span>
+                                <span className="text-[10px] text-slate-500 text-center">{trait.description}</span>
                                 {isSelected && (
-                                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center animate-in zoom-in duration-200">
+                                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center animate-in zoom-in duration-200">
                                         <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                         </svg>
@@ -135,16 +135,16 @@ export function PersonaConfig() {
             {selected.length > 0 && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
                     <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-indigo-400" />
-                        <label className="text-sm font-medium text-zinc-300">Preview de mensagens</label>
+                        <Sparkles className="w-4 h-4 text-blue-400" />
+                        <label className="text-sm font-medium text-slate-300">Preview de mensagens</label>
                         {selectedLabels && (
-                            <span className="px-2 py-0.5 text-[9px] font-semibold bg-indigo-500/10 text-indigo-400 rounded-full border border-indigo-500/20">
+                            <span className="px-2 py-0.5 text-[9px] font-semibold bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20">
                                 {selectedLabels}
                             </span>
                         )}
                     </div>
 
-                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
                         {[
                             { label: 'Saudação', text: messages.greeting },
                             { label: 'Roteando', text: messages.routing },
@@ -155,8 +155,8 @@ export function PersonaConfig() {
                                 className="animate-in fade-in slide-in-from-bottom-2 duration-200"
                                 style={{ animationDelay: `${i * 100}ms` }}
                             >
-                                <span className="text-[9px] font-semibold text-zinc-600 uppercase tracking-wider">{msg.label}</span>
-                                <div className="mt-1 bg-indigo-600/90 text-white px-3.5 py-2.5 rounded-2xl rounded-br-md text-sm max-w-[85%] ml-auto">
+                                <span className="text-[9px] font-semibold text-slate-600 uppercase tracking-wider">{msg.label}</span>
+                                <div className="mt-1 bg-blue-600/90 text-white px-3.5 py-2.5 rounded-2xl rounded-br-md text-sm max-w-[85%] ml-auto">
                                     {msg.text}
                                 </div>
                             </div>

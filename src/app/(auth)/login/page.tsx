@@ -59,19 +59,19 @@ export default function LoginPage() {
         <div className="space-y-6">
             {/* Logo */}
             <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 mb-2">
-                    <MessageSquareMore className="w-6 h-6 text-indigo-400" />
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 mb-2">
+                    <MessageSquareMore className="w-6 h-6 text-blue-400" />
                 </div>
-                <h1 className="text-2xl font-bold text-white">TrackerAi Pro</h1>
-                <p className="text-sm text-zinc-400">Faça login para acessar sua conta</p>
+                <h1 className="text-2xl font-bold text-white">TriaGO</h1>
+                <p className="text-sm text-slate-400">Faça login para acessar sua conta</p>
             </div>
 
             {/* Card */}
-            <div className="bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 rounded-2xl p-6 shadow-2xl">
+            <div className="bg-slate-900/80 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 shadow-2xl">
                 <form onSubmit={handleLogin} className="space-y-4">
                     {/* Email */}
                     <div className="space-y-2">
-                        <label htmlFor="email" className="text-sm font-medium text-zinc-300">
+                        <label htmlFor="email" className="text-sm font-medium text-slate-300">
                             Email
                         </label>
                         <input
@@ -81,13 +81,13 @@ export default function LoginPage() {
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="seu@email.com"
                             required
-                            className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm"
+                            className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm"
                         />
                     </div>
 
                     {/* Password */}
                     <div className="space-y-2">
-                        <label htmlFor="password" className="text-sm font-medium text-zinc-300">
+                        <label htmlFor="password" className="text-sm font-medium text-slate-300">
                             Senha
                         </label>
                         <div className="relative">
@@ -98,12 +98,12 @@ export default function LoginPage() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
                                 required
-                                className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm pr-10"
+                                className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm pr-10"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
                             >
                                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
@@ -121,7 +121,7 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-600/50 text-white font-medium rounded-lg transition-all text-sm cursor-pointer disabled:cursor-not-allowed"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 text-white font-medium rounded-lg transition-all text-sm cursor-pointer disabled:cursor-not-allowed"
                     >
                         {loading ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -137,17 +137,17 @@ export default function LoginPage() {
                 {/* Divider */}
                 <div className="relative my-6">
                     <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-zinc-800" />
+                        <div className="w-full border-t border-slate-800" />
                     </div>
                     <div className="relative flex justify-center text-xs">
-                        <span className="px-2 bg-zinc-900/80 text-zinc-500">ou continue com</span>
+                        <span className="px-2 bg-slate-900/80 text-slate-500">ou continue com</span>
                     </div>
                 </div>
 
                 {/* Google */}
                 <button
                     onClick={handleGoogleLogin}
-                    className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-medium rounded-lg transition-all text-sm cursor-pointer"
+                    className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium rounded-lg transition-all text-sm cursor-pointer"
                 >
                     <svg className="w-4 h-4" viewBox="0 0 24 24">
                         <path
@@ -172,9 +172,9 @@ export default function LoginPage() {
             </div>
 
             {/* Register link */}
-            <p className="text-center text-sm text-zinc-500">
+            <p className="text-center text-sm text-slate-500">
                 Não tem conta?{' '}
-                <Link href="/register" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
+                <Link href="/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
                     Criar conta
                 </Link>
             </p>

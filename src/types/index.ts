@@ -1,4 +1,4 @@
-// TypeScript types for TrackerAi Pro
+// TypeScript types for TriaGO
 // Auto-generate Supabase types with: npx supabase gen types typescript
 
 export interface OrganizationSettings {

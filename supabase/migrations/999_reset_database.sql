@@ -18,6 +18,13 @@ GRANT ALL ON SCHEMA public TO public;
 -- 4. Enable UUID extension inside the new public schema
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA public;
 
+-- 5. Restore default role usage for Supabase API 
+-- (CRITICAL: without this, all API routes crash with "permission denied")
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
+
 -- =============================================
 -- NOW YOU MUST PASTE AND RUN THE FULL PRODUCTION SCHEMA
 -- Copy the contents of 20260308_production_schema.sql 

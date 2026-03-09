@@ -13,7 +13,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TrackerAi Pro",
+  title: "TriaGO",
   description: "Roteamento inteligente de conversas WhatsApp para equipes de atendimento",
 };
 
@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark">
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased bg-zinc-950 text-zinc-100`}
+        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased bg-slate-950 text-zinc-100`}
       >
         {children}
       </body>
