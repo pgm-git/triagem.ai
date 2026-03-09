@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Smartphone,
     Wifi,
@@ -97,7 +97,8 @@ const providerInfo: Record<WhatsAppProvider, {
 };
 
 export default function CanaisPage() {
-    const [instances, setInstances] = useState<WhatsAppInstance[]>(demoInstances);
+    const [instances, setInstances] = useState<WhatsAppInstance[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [showNewDrawer, setShowNewDrawer] = useState(false);
     const [selectedProvider, setSelectedProvider] = useState<WhatsAppProvider | null>(null);
     const [connectStep, setConnectStep] = useState<'select' | 'form' | 'connecting'>('select');
@@ -112,6 +113,24 @@ export default function CanaisPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+
+    // Fetch instances on mount
+    useEffect(() => {
+        const fetchInstances = async () => {
+            try {
+                const res = await fetch('/api/channels');
+                if (res.ok) {
+                    const data = await res.json();
+                    setInstances(data.instances || []);
+                }
+            } catch (err) {
+                console.error('Failed to load instances:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchInstances();
+    }, []);
 
     const openDrawer = () => {
         setShowNewDrawer(true);
@@ -187,6 +206,14 @@ export default function CanaisPage() {
 
         setIsSubmitting(false);
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center p-16">
+                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
