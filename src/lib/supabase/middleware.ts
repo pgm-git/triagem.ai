@@ -31,13 +31,15 @@ export async function updateSession(request: NextRequest) {
 
     const isAuthPage =
         request.nextUrl.pathname.startsWith('/login') ||
-        request.nextUrl.pathname.startsWith('/register');
+        request.nextUrl.pathname.startsWith('/register') ||
+        request.nextUrl.pathname.startsWith('/invite');
     const isWebhook = request.nextUrl.pathname.startsWith('/api/webhooks');
     const isAuthApi = request.nextUrl.pathname.startsWith('/api/auth');
+    const isInviteApi = request.nextUrl.pathname.startsWith('/api/team/invite');
     const isApi = request.nextUrl.pathname.startsWith('/api');
 
-    // Webhooks and Auth APIs skip auth
-    if (isWebhook || isAuthApi) return supabaseResponse;
+    // Webhooks, Invite APIs, and Auth APIs skip auth
+    if (isWebhook || isAuthApi || isInviteApi) return supabaseResponse;
 
     // Other API routes return 401 if not authenticated  
     if (isApi && !user) {
@@ -49,6 +51,23 @@ export async function updateSession(request: NextRequest) {
         const url = request.nextUrl.clone();
         url.pathname = '/login';
         return NextResponse.redirect(url);
+    }
+
+    // Role-Based Access Control (RBAC) - Restrict Admin Routes for 'agent' role
+    if (user && !isAuthPage && !isApi) {
+        const adminRoutes = ['/canais', '/setores', '/equipe', '/configuracoes', '/simulador', '/logs'];
+        const isTryingAdminRoute = adminRoutes.some(route => request.nextUrl.pathname.startsWith(route));
+
+        if (isTryingAdminRoute) {
+            // Check if user has 'agent' role in their metadata (we saved it on Registration)
+            // Or fallback to database check if you prefer, but metadata is faster inside middleware:
+            const role = user.user_metadata?.role;
+            if (role === 'agent') {
+                const url = request.nextUrl.clone();
+                url.pathname = '/conversas';
+                return NextResponse.redirect(url);
+            }
+        }
     }
 
     // Redirect authenticated users away from auth pages

@@ -159,23 +159,28 @@ export async function POST(
         // ──── 2. Find active conversation or create new ────
         const { data: existingConv } = await supabase
             .from('conversations')
-            .select('id, sector_id, unread_count')
+            .select('id, sector_id, unread_count, status')
             .eq('organization_id', instance.organization_id)
             .eq('contact_phone', senderPhone)
-            .in('status', ['active', 'pending_triage'])
+            .in('status', ['active', 'pending_triage', 'waiting_agent', 'in_progress'])
             .order('created_at', { ascending: false })
             .limit(1)
             .single();
 
         let conversationId: string;
+        let requiresRouting = !existingConv || existingConv.status === 'pending_triage';
+        let responseTemplate: string | null = null;
+        let routedBy: 'auto' | 'fallback' = 'fallback';
 
-        if (existingConv) {
+        if (existingConv && !requiresRouting) {
+            // It's already routed (e.g. 'active', 'waiting_agent', 'in_progress'). 
+            // The AI/Router doesn't interfere anymore. Just update timestamps.
             conversationId = existingConv.id;
             await supabase.from('conversations').update({
                 last_message_at: new Date().toISOString(),
                 unread_count: (existingConv.unread_count || 0) + 1,
             }).eq('id', conversationId);
-        } else {
+        } else { // This block handles both new conversations and existing pending_triage ones
             // ──── 3. Route the message ────
             const { data: sectors } = await supabase
                 .from('sectors')
@@ -187,8 +192,6 @@ export async function POST(
             const normalized = messageText.toLowerCase().trim();
             let matchedSectorId: string | null = null;
             let matchedKeyword: string | null = null;
-            let routedBy: 'auto' | 'fallback' = 'fallback';
-            let responseTemplate: string | null = null;
 
             for (const sector of (sectors || [])) {
                 if (sector.is_fallback) continue;
@@ -213,24 +216,20 @@ export async function POST(
                     console.log(`[Webhook] AI Decision: ${aiResult.action} | Sector: ${aiResult.sector_id} | Reasoning: ${aiResult.reasoning}`);
 
                     if (aiResult.action === 'route' && aiResult.sector_id) {
-                        // Verify if AI gave a real sector_id
                         const validSector = (sectors || []).find(s => s.id === aiResult.sector_id);
                         if (validSector && !validSector.is_fallback) {
                             matchedSectorId = validSector.id;
-                            routedBy = 'auto'; // Using auto for AI routed
+                            routedBy = 'auto';
                             matchedKeyword = 'AI_INTENT';
                         }
                     }
-                    // AI overrides the response regardless of routing or asking
                     responseTemplate = aiResult.response;
                 }
 
-                // If AI gave no valid sector, or if AI failed completely, fallback
                 if (!matchedSectorId) {
                     const fallback = (sectors || []).find(s => s.is_fallback);
                     if (fallback) {
                         matchedSectorId = fallback.id;
-                        // Only use fallback message if AI hasn't already provided a response
                         if (!responseTemplate) {
                             responseTemplate = fallback.fallback_message;
                         }
@@ -238,25 +237,42 @@ export async function POST(
                 }
             }
 
-            const { data: newConv } = await supabase
-                .from('conversations')
-                .insert({
-                    organization_id: instance.organization_id,
-                    instance_id: instanceId,
-                    sector_id: matchedSectorId,
-                    contact_id: contactId,
-                    contact_phone: senderPhone,
-                    contact_name: senderName,
-                    status: matchedSectorId ? 'active' : 'pending_triage',
+            if (existingConv) {
+                // Multi-turn triage finally hit a sector
+                conversationId = existingConv.id;
+                await supabase.from('conversations').update({
+                    sector_id: matchedSectorId || existingConv.sector_id,
+                    status: matchedSectorId ? 'waiting_agent' : 'pending_triage',
+                    queued_at: matchedSectorId ? new Date().toISOString() : null,
                     routed_by: routedBy,
                     matched_keyword: matchedKeyword,
                     last_message_at: new Date().toISOString(),
-                    unread_count: 1,
-                })
-                .select('id')
-                .single();
+                    unread_count: (existingConv.unread_count || 0) + 1,
+                }).eq('id', conversationId);
+            } else {
+                // Completely new conversation
+                const { data: newConv } = await supabase
+                    .from('conversations')
+                    .insert({
+                        organization_id: instance.organization_id,
+                        instance_id: instanceId,
+                        sector_id: matchedSectorId,
+                        contact_id: contactId,
+                        contact_phone: senderPhone,
+                        contact_name: senderName,
+                        status: matchedSectorId ? 'waiting_agent' : 'pending_triage',
+                        queued_at: matchedSectorId ? new Date().toISOString() : null,
+                        routed_by: routedBy,
+                        matched_keyword: matchedKeyword,
+                        last_message_at: new Date().toISOString(),
+                        unread_count: 1,
+                    })
+                    .select('id')
+                    .single();
 
-            conversationId = newConv!.id;
+                conversationId = newConv!.id;
+                await supabase.rpc('increment_usage', { p_org_id: instance.organization_id, p_type: 'conversation' });
+            }
 
             // Log routing
             if (matchedSectorId) {
@@ -269,32 +285,30 @@ export async function POST(
                     metadata: { message_preview: messageText.substring(0, 100) },
                 });
             }
+        }
 
-            await supabase.rpc('increment_usage', { p_org_id: instance.organization_id, p_type: 'conversation' });
-
-            // ──── 4. Send auto-response ────
-            if (responseTemplate && instance.provider === 'uazapi' && instance.uazapi_token && instance.uazapi_url) {
-                try {
-                    const { UazAPIProvider } = await import('@/lib/whatsapp/uazapi-provider');
-                    const provider = new UazAPIProvider({
-                        baseUrl: instance.uazapi_url,
-                        instanceToken: instance.uazapi_token,
+        // ──── 4. Send auto-response ────
+        if (responseTemplate && instance.provider === 'uazapi' && instance.uazapi_token && instance.uazapi_url) {
+            try {
+                const { UazAPIProvider } = await import('@/lib/whatsapp/uazapi-provider');
+                const provider = new UazAPIProvider({
+                    baseUrl: instance.uazapi_url,
+                    instanceToken: instance.uazapi_token,
+                });
+                const result = await provider.sendText(senderPhone, responseTemplate);
+                if (result.success) {
+                    await supabase.from('messages').insert({
+                        conversation_id: conversationId,
+                        content: responseTemplate,
+                        sender_type: 'bot',
+                        uazapi_message_id: result.messageId,
+                        status: 'sent',
                     });
-                    const result = await provider.sendText(senderPhone, responseTemplate);
-                    if (result.success) {
-                        await supabase.from('messages').insert({
-                            conversation_id: conversationId,
-                            content: responseTemplate,
-                            sender_type: 'bot',
-                            uazapi_message_id: result.messageId,
-                            status: 'sent',
-                        });
-                        await supabase.rpc('increment_usage', { p_org_id: instance.organization_id, p_type: 'message_sent' });
-                        console.log(`[Webhook] Auto-response sent to ${senderPhone}`);
-                    }
-                } catch (err) {
-                    console.error('[Webhook] Auto-response error:', err);
+                    await supabase.rpc('increment_usage', { p_org_id: instance.organization_id, p_type: 'message_sent' });
+                    console.log(`[Webhook] Auto-response sent to ${senderPhone}`);
                 }
+            } catch (err) {
+                console.error('[Webhook] Auto-response error:', err);
             }
         }
 

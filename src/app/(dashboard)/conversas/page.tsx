@@ -13,8 +13,12 @@ import {
     Bot,
     User,
     Headphones,
+    UserCheck,
+    CheckCircle2,
+    Inbox
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/contexts/user-context';
 
 interface Conversation {
     id: string;
@@ -26,6 +30,10 @@ interface Conversation {
     unread_count: number;
     last_message_at: string | null;
     sector_id: string | null;
+    agent_id: string | null;
+    queued_at: string | null;
+    in_progress_at: string | null;
+    resolved_at: string | null;
     sectors: { id: string; name: string; icon: string } | null;
 }
 
@@ -38,6 +46,7 @@ interface Message {
 }
 
 export default function ConversasPage() {
+    const { user } = useUser();
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -45,8 +54,11 @@ export default function ConversasPage() {
     const [sending, setSending] = useState(false);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [activeTab, setActiveTab] = useState<'queue' | 'mine' | 'all'>('queue');
     const [sectors, setSectors] = useState<any[]>([]);
     const [transferring, setTransferring] = useState(false);
+    const [assigning, setAssigning] = useState(false);
+    const [resolving, setResolving] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Load conversations and sectors
@@ -199,7 +211,7 @@ export default function ConversasPage() {
             if (res.ok) {
                 // Optimistic UI update
                 setConversations(prev => prev.map(c =>
-                    c.id === selectedId ? { ...c, sector_id: newSectorId, sectors: { id: sector.id, name: sector.name, icon: sector.icon }, routed_by: 'manual' } : c
+                    c.id === selectedId ? { ...c, sector_id: newSectorId, sectors: { id: sector.id, name: sector.name, icon: sector.icon }, routed_by: 'manual', status: 'waiting_agent' } : c
                 ));
             }
         } catch (err) {
@@ -209,8 +221,52 @@ export default function ConversasPage() {
         }
     };
 
+    // Assumir atendimento (Assign)
+    const handleAssign = async () => {
+        if (!selectedId || assigning) return;
+        setAssigning(true);
+        try {
+            const res = await fetch(`/api/conversations/${selectedId}/assign`, { method: 'POST' });
+            if (res.ok) {
+                const { conversation } = await res.json();
+                setConversations(prev => prev.map(c => c.id === selectedId ? { ...c, ...conversation } : c));
+                setActiveTab('mine');
+            }
+        } catch (err) {
+            console.error('Failed to assign', err);
+        } finally {
+            setAssigning(false);
+        }
+    };
+
+    // Finalizar atendimento (Resolve)
+    const handleResolve = async () => {
+        if (!selectedId || resolving) return;
+        setResolving(true);
+        try {
+            const res = await fetch(`/api/conversations/${selectedId}/resolve`, { method: 'POST' });
+            if (res.ok) {
+                const { conversation } = await res.json();
+                setConversations(prev => prev.map(c => c.id === selectedId ? { ...c, ...conversation } : c));
+                setSelectedId(null); // Clear selection since it moved to 'all' or history
+            }
+        } catch (err) {
+            console.error('Failed to resolve', err);
+        } finally {
+            setResolving(false);
+        }
+    };
+
     const selected = conversations.find(c => c.id === selectedId);
-    const filteredConversations = conversations.filter(c =>
+
+    // Filtros por Tab e Busca
+    const tabFiltered = conversations.filter(c => {
+        if (activeTab === 'queue') return c.status === 'waiting_agent';
+        if (activeTab === 'mine') return c.status === 'in_progress' && c.agent_id === user?.id;
+        return true; // 'all' - todo: maybe exclude resolved from main view later
+    });
+
+    const filteredConversations = tabFiltered.filter(c =>
         (c.contact_name || c.contact_phone).toLowerCase().includes(search.toLowerCase())
     );
 
@@ -243,9 +299,29 @@ export default function ConversasPage() {
 
     return (
         <div className="flex h-[calc(100vh-120px)] rounded-xl overflow-hidden border border-slate-800">
-            {/* ──── Left: Conversation list ──── */}
             <div className="w-[340px] border-r border-slate-800 flex flex-col bg-slate-950">
-                <div className="p-3 border-b border-slate-800">
+                <div className="p-3 border-b border-slate-800 space-y-3">
+                    <div className="flex bg-slate-900 rounded-lg p-1">
+                        <button
+                            onClick={() => setActiveTab('queue')}
+                            className={cn('flex-1 py-1.5 text-xs font-medium rounded-md transition-all', activeTab === 'queue' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200')}
+                        >
+                            Fila de Espera
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('mine')}
+                            className={cn('flex-1 py-1.5 text-xs font-medium rounded-md transition-all', activeTab === 'mine' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200')}
+                        >
+                            Meus Atend.
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('all')}
+                            className={cn('flex-1 py-1.5 text-xs font-medium rounded-md transition-all', activeTab === 'all' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200')}
+                        >
+                            Todas
+                        </button>
+                    </div>
+
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                         <input
@@ -327,12 +403,26 @@ export default function ConversasPage() {
                                 </h3>
                                 <p className="text-xs text-slate-500">{selected.contact_phone}</p>
                             </div>
-                            {selected.sectors && (
-                                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 rounded-full">
-                                    <span className="text-xs">{selected.sectors.icon}</span>
-                                    <span className="text-xs text-slate-400">{selected.sectors.name}</span>
-                                </div>
-                            )}
+
+                            <div className="flex items-center gap-2">
+                                {selected.sectors && (
+                                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 rounded-full border border-slate-700">
+                                        <span className="text-xs">{selected.sectors.icon}</span>
+                                        <span className="text-xs text-slate-400">{selected.sectors.name}</span>
+                                    </div>
+                                )}
+
+                                {selected.status === 'in_progress' && selected.agent_id === user?.id && (
+                                    <button
+                                        onClick={handleResolve}
+                                        disabled={resolving}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 border border-emerald-500/30 rounded-full text-xs font-medium transition-colors disabled:opacity-50"
+                                    >
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        {resolving ? 'Encerrando...' : 'Finalizar Atendimento'}
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Messages area */}
@@ -386,25 +476,42 @@ export default function ConversasPage() {
                             <div ref={messagesEndRef} />
                         </div>
 
-                        {/* Input */}
+                        {/* Input or Assign Button */}
                         <div className="p-3 border-t border-slate-800 bg-slate-950">
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                                    placeholder="Digite uma mensagem..."
-                                    className="flex-1 px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
-                                />
+                            {selected.status === 'waiting_agent' ? (
                                 <button
-                                    onClick={handleSend}
-                                    disabled={!newMessage.trim() || sending}
-                                    className="p-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 text-white rounded-xl transition-all cursor-pointer disabled:cursor-not-allowed"
+                                    onClick={handleAssign}
+                                    disabled={assigning}
+                                    className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all font-medium disabled:opacity-50"
                                 >
-                                    {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                    {assigning ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserCheck className="w-5 h-5" />}
+                                    {assigning ? 'Atribuindo à você...' : 'Assumir Atendimento'}
                                 </button>
-                            </div>
+                            ) : selected.status === 'in_progress' && selected.agent_id !== user?.id ? (
+                                <div className="flex items-center justify-center gap-2 py-3 bg-slate-800/50 text-slate-400 rounded-xl border border-slate-800 text-sm">
+                                    <User className="w-4 h-4" />
+                                    Esta conversa está sendo atendida por outro agente
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        value={newMessage}
+                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                                        disabled={selected.status === 'resolved' || (selected.status === 'in_progress' && selected.agent_id !== user?.id)}
+                                        placeholder={selected.status === 'resolved' ? "Conversa encerrada" : "Digite uma mensagem..."}
+                                        className="flex-1 px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    />
+                                    <button
+                                        onClick={handleSend}
+                                        disabled={!newMessage.trim() || sending || selected.status === 'resolved'}
+                                        className="p-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 text-white rounded-xl transition-all cursor-pointer disabled:cursor-not-allowed"
+                                    >
+                                        {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </>
                 )}
@@ -427,6 +534,30 @@ export default function ConversasPage() {
                                     ? new Date(selected.last_message_at).toLocaleString('pt-BR')
                                     : 'Sem mensagens'}
                             </span>
+                        </div>
+                    </div>
+
+                    <div className="border-t border-slate-800 pt-3">
+                        <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2">Jornada Temporal</h4>
+                        <div className="space-y-2">
+                            {selected.queued_at && (
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs text-slate-500">Fila Iniciada</span>
+                                    <span className="text-xs text-slate-400">{new Date(selected.queued_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                            )}
+                            {selected.in_progress_at && (
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs text-slate-500">Assumido</span>
+                                    <span className="text-xs text-slate-400">{new Date(selected.in_progress_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                            )}
+                            {selected.resolved_at && (
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs text-slate-500">Resolvido</span>
+                                    <span className="text-xs text-slate-400">{new Date(selected.resolved_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -458,23 +589,21 @@ export default function ConversasPage() {
                                     {selected.routed_by === 'auto' ? '🤖 Automático' : '🔄 Fallback'}
                                 </span>
                             </div>
-                            {selected.matched_keyword && (
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs text-slate-500">Keyword</span>
-                                    <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded">
-                                        {selected.matched_keyword}
-                                    </span>
-                                </div>
-                            )}
                             <div className="flex items-center justify-between">
                                 <span className="text-xs text-slate-500">Status</span>
                                 <span className={cn(
-                                    'text-xs px-2 py-0.5 rounded-full',
-                                    selected.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' :
-                                        selected.status === 'pending_triage' ? 'bg-amber-500/10 text-amber-400' :
-                                            'bg-slate-500/10 text-slate-400'
+                                    'text-xs px-2 py-0.5 rounded-full font-medium',
+                                    selected.status === 'active' ? 'bg-indigo-500/10 text-indigo-400' :
+                                        selected.status === 'waiting_agent' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                                            selected.status === 'in_progress' ? 'bg-blue-500/10 text-blue-400' :
+                                                selected.status === 'pending_triage' ? 'bg-purple-500/10 text-purple-400' :
+                                                    'bg-emerald-500/10 text-emerald-400'
                                 )}>
-                                    {selected.status === 'active' ? 'Ativa' : selected.status === 'pending_triage' ? 'Triagem' : 'Resolvida'}
+                                    {selected.status === 'active' ? 'Ativa (IA)' :
+                                        selected.status === 'waiting_agent' ? '⏳ Fila de Espera' :
+                                            selected.status === 'in_progress' ? 'Em Atendimento' :
+                                                selected.status === 'pending_triage' ? 'Triagem' :
+                                                    'Resolvida'}
                                 </span>
                             </div>
                         </div>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUIStore } from '@/stores/ui';
 import { createClient } from '@/lib/supabase/client';
+import { useUser } from '@/contexts/user-context';
 import {
     LayoutDashboard,
     MessageSquare,
@@ -17,13 +18,17 @@ import {
     MessageSquareMore,
     Sparkles,
     LogOut,
+    Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const adminOnlyPaths = ['/setores', '/equipe', '/canais', '/logs', '/simulador', '/configuracoes'];
 
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/conversas', label: 'Conversas', icon: MessageSquare },
     { href: '/setores', label: 'Setores', icon: Building2 },
+    { href: '/equipe', label: 'Equipe', icon: Users },
     { href: '/canais', label: 'Canais', icon: Smartphone },
     { href: '/logs', label: 'Logs', icon: ClipboardList },
     { href: '/simulador', label: 'Simulador', icon: Sparkles },
@@ -34,6 +39,7 @@ export function AppSidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { sidebarCollapsed, toggleSidebar } = useUIStore();
+    const { profile } = useUser(); // Hook to get user role!
 
     const handleLogout = async () => {
         const supabase = createClient();
@@ -62,6 +68,11 @@ export function AppSidebar() {
             {/* Navigation */}
             <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
                 {navItems.map((item) => {
+                    const isAdminContent = adminOnlyPaths.includes(item.href);
+                    if (isAdminContent && (!profile || profile.role === 'agent')) {
+                        return null; // Hide from Agents
+                    }
+
                     const isActive = pathname.startsWith(item.href);
                     return (
                         <Link

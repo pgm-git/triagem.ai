@@ -154,10 +154,14 @@ export interface Conversation {
   sector_id: string;
   contact_name: string;
   contact_phone: string;
-  status: 'active' | 'resolved' | 'pending_triage';
+  status: 'active' | 'resolved' | 'pending_triage' | 'waiting_agent' | 'in_progress';
   last_message_at: string;
   unread_count: number;
   routed_by: 'auto' | 'manual' | 'fallback';
+  agent_id?: string;
+  queued_at?: string;
+  in_progress_at?: string;
+  resolved_at?: string;
   rule_id?: string;
   created_at: string;
   updated_at: string;

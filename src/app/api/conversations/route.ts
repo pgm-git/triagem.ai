@@ -35,6 +35,10 @@ export async function GET(request: Request) {
             unread_count,
             last_message_at,
             created_at,
+            queued_at,
+            in_progress_at,
+            resolved_at,
+            agent_id,
             sector_id,
             sectors ( id, name, icon )
         `)
