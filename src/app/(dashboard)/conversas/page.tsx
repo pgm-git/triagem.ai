@@ -34,6 +34,7 @@ interface Conversation {
     queued_at: string | null;
     in_progress_at: string | null;
     resolved_at: string | null;
+    collected_data: Record<string, any> | null;
     sectors: { id: string; name: string; icon: string } | null;
 }
 
@@ -560,6 +561,20 @@ export default function ConversasPage() {
                             )}
                         </div>
                     </div>
+
+                    {selected.collected_data && Object.keys(selected.collected_data).length > 0 && (
+                        <div className="border-t border-slate-800 pt-3">
+                            <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2">Dados Coletados (IA)</h4>
+                            <div className="space-y-1.5">
+                                {Object.entries(selected.collected_data).map(([key, value]) => (
+                                    <div key={key} className="flex flex-col bg-slate-900/50 p-2 rounded border border-slate-800/50">
+                                        <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">{key}</span>
+                                        <span className="text-xs text-blue-400 font-medium">{String(value)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="border-t border-slate-800 pt-3">
                         <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2">Roteamento</h4>

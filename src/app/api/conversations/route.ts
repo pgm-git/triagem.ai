@@ -40,6 +40,7 @@ export async function GET(request: Request) {
             resolved_at,
             agent_id,
             sector_id,
+            collected_data,
             sectors ( id, name, icon )
         `)
         .eq('organization_id', profile.organization_id)

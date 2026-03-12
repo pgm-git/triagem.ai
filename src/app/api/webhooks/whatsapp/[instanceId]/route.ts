@@ -159,7 +159,7 @@ export async function POST(
         // ──── 2. Find active conversation or create new ────
         const { data: existingConv } = await supabase
             .from('conversations')
-            .select('id, sector_id, unread_count, status')
+            .select('id, sector_id, unread_count, status, collected_data')
             .eq('organization_id', instance.organization_id)
             .eq('contact_phone', senderPhone)
             .in('status', ['active', 'pending_triage', 'waiting_agent', 'in_progress'])
@@ -208,12 +208,25 @@ export async function POST(
             }
 
             if (!matchedSectorId) {
-                // ──── 3.5 AI Routing Pipeline ────
+                // ──── 3.5 AI Routing & Slot-Filling Pipeline ────
                 const { processMessageWithAI } = await import('@/lib/ai/router');
-                const aiResult = await processMessageWithAI(messageText, instance.organization_id, sectors || [], supabase);
+                const aiResult = await processMessageWithAI(
+                    messageText,
+                    instance.organization_id,
+                    sectors || [],
+                    supabase,
+                    existingConv?.sector_id,
+                    existingConv?.collected_data || {}
+                );
 
                 if (aiResult) {
-                    console.log(`[Webhook] AI Decision: ${aiResult.action} | Sector: ${aiResult.sector_id} | Reasoning: ${aiResult.reasoning}`);
+                    console.log(`[Webhook] AI Decision: ${aiResult.action} | Sector: ${aiResult.sector_id} | Extracted: ${JSON.stringify(aiResult.extracted_data)}`);
+
+                    // Merge newly extracted data
+                    const updatedCollectedData = {
+                        ...(existingConv?.collected_data || {}),
+                        ...(aiResult.extracted_data || {})
+                    };
 
                     if (aiResult.action === 'route' && aiResult.sector_id) {
                         const validSector = (sectors || []).find(s => s.id === aiResult.sector_id);
@@ -223,10 +236,21 @@ export async function POST(
                             matchedKeyword = 'AI_INTENT';
                         }
                     }
+
+                    // If it's "collect", we save the data but don't set matchedSectorId for final routing yet
+                    // unless the AI said "route".
                     responseTemplate = aiResult.response;
+
+                    // Persist collected data
+                    if (existingConv) {
+                        await supabase.from('conversations').update({
+                            collected_data: updatedCollectedData,
+                            sector_id: aiResult.sector_id || existingConv.sector_id
+                        }).eq('id', existingConv.id);
+                    }
                 }
 
-                if (!matchedSectorId) {
+                if (!matchedSectorId && (!aiResult || aiResult.action !== 'collect')) {
                     const fallback = (sectors || []).find(s => s.is_fallback);
                     if (fallback) {
                         matchedSectorId = fallback.id;

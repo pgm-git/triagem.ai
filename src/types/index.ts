@@ -163,6 +163,7 @@ export interface Conversation {
   in_progress_at?: string;
   resolved_at?: string;
   rule_id?: string;
+  collected_data?: Record<string, any>;
   created_at: string;
   updated_at: string;
 }

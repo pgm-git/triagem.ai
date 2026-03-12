@@ -10,17 +10,20 @@ import { Sector, OrganizationSettings, AIPersona } from '@/types';
 // =========================================================================
 
 export interface AIRouteResult {
-    action: 'route' | 'ask';
+    action: 'route' | 'ask' | 'collect';
     sector_id?: string;
     response: string;
     reasoning: string;
+    extracted_data?: Record<string, any>;
 }
 
 export async function processMessageWithAI(
     messageText: string,
     organizationId: string,
     sectors: Sector[],
-    supabase: SupabaseClient
+    supabase: SupabaseClient,
+    currentSectorId?: string | null,
+    currentCollectedData?: Record<string, any>
 ): Promise<AIRouteResult | null> {
     try {
         // 1. Fetch AI configurations from Supabase
@@ -32,13 +35,17 @@ export async function processMessageWithAI(
         const aiSettings = settings as OrganizationSettings | null;
         const activePersona = personas?.[0] as AIPersona | undefined;
 
-        // If no API key is provided in env, fallback gracefully
         if (!process.env.OPENAI_API_KEY) {
             console.warn('OPENAI_API_KEY not found in environment');
             return null;
         }
 
-        // 2. Build the Persona Instructions
+        // 2. Localize targeted sector if already set (Collection mode)
+        const targetSector = currentSectorId ? sectors.find(s => s.id === currentSectorId) : null;
+        const collectionSchema = targetSector?.collection_fields || [];
+        const hasFieldsToCollect = collectionSchema.length > 0;
+
+        // 3. Build Persona & Base Context
         const personaContext = activePersona
             ? `Você é: ${activePersona.name}.\n${activePersona.description || ''}\n${activePersona.prompt_instructions || ''}`
             : 'Você é um assistente virtual útil e educado. Tente identificar o que o usuário deseja e encaminhar para o departamento correto.';
@@ -47,37 +54,61 @@ export async function processMessageWithAI(
             ? `Diretrizes da Empresa:\n${aiSettings.custom_prompt_base}`
             : '';
 
-        // 3. Build the Sectors List for the LLM
-        const sectorsContext = sectors.map(s => `- ID: ${s.id} | Nome: ${s.name} | Descrição/Keywords: ${s.keywords?.join(', ')}`).join('\n');
+        // 4. Build Sectors List
+        const sectorsContext = sectors.map(s => {
+            const fieldsInfo = s.collection_fields?.length
+                ? ` (Campos obrigatórios: ${s.collection_fields.map(f => f.variable).join(', ')})`
+                : '';
+            return `- ID: ${s.id} | Nome: ${s.name} | Descrição/Keywords: ${s.keywords?.join(', ')}${fieldsInfo}`;
+        }).join('\n');
 
-        // 4. Call Vercel AI SDK with Structured Output
-        // Tries to classify the intention and either ROUTE it to a sector, or ASK the user for more clarification.
+        // 5. Build State Context (if collecting)
+        const collectionContext = hasFieldsToCollect
+            ? `
+VOCÊ ESTÁ EM MODO DE COLETA DE DADOS para o setor "${targetSector?.name}".
+Dados já coletados até agora: ${JSON.stringify(currentCollectedData || {})}
+Campos que você DEVE coletar:
+${collectionSchema.map(f => `- ${f.variable}: ${f.label} (${f.context}) ${f.required ? '[OBRIGATÓRIO]' : ''}`).join('\n')}
+
+IMPORTANTE:
+- Se o cliente fornecer um dado novo nesta mensagem, extraia-o no objeto "extracted_data".
+- Verifique se após esta extração, TODOS os campos [OBRIGATÓRIO] estão preenchidos.
+- Se faltar algo, escolha action: "collect" e peça educadamente o dado faltante.
+- Se tudo estiver preenchido, escolha action: "route" e dê as boas-vindas ao setor.
+            `
+            : '';
+
+        // 6. Call Vercel AI SDK
         const result = await generateObject({
             model: openai(aiSettings?.ai_model || 'gpt-4o-mini'),
             temperature: aiSettings?.ai_temperature ?? 0.7,
             schema: z.object({
-                action: z.enum(['route', 'ask']).describe('Se a intenção for clara, escolha "route". Se precisar de mais informações, escolha "ask".'),
-                sector_id: z.string().optional().describe('Se a action for "route", retorne o ID exato do setor correspondente. Se for "ask", omitir.'),
-                response: z.string().describe('A mensagem que será enviada de volta para o cliente, respondendo com a Persona definida.'),
-                reasoning: z.string().describe('Breve raciocínio interno sobre o porquê dessa decisão (para logs)')
+                action: z.enum(['route', 'ask', 'collect']).describe('route: encaminhar; ask: tirar dúvida/triagem; collect: pedir dado específico.'),
+                sector_id: z.string().optional().describe('O ID do setor para onde rotear.'),
+                response: z.string().describe('A mensagem de voz da Persona para o cliente.'),
+                reasoning: z.string().describe('Explicação interna.'),
+                extracted_data: z.record(z.string(), z.any()).optional().describe('Dados extraídos da mensagem (campos da collection).')
             }),
             system: `
-Você é a inteligência artificial de roteamento e triagem de atendimento via WhatsApp.
-Sua missão final é decidir qual setor da empresa deve atender o cliente ou se você mesmo pode responder para coletar mais dados.
+Você é a inteligência artificial de roteamento e triagem do TriaGO.
+Sua missão é classificar o cliente ou coletar dados necessários antes de passar para um humano.
 
 ${personaContext}
 
 ${baseContext}
 
-SETORES DISPONÍVEIS NA EMPRESA:
+SETORES DISPONÍVEIS:
 ${sectorsContext}
 
-COMO RESPONDER:
-- Se a mensagem do cliente deixa clara a intenção e encaixa em um dos setores, escolha a action "route" e retorne o "sector_id" exato. Em "response", mande uma mensagem de despedida informando que vai transferir. Exemplo: "Certo! Vou transferir para o Financeiro."
-- Se a mensagem for vazia, um simples "Oi", ou for ambígua, escolha a action "ask". Em "response", pergunte como pode ajudar para que possamos classificar depois. Exemplo: "Olá! Como posso ajudar você hoje?"
-- Sempre responda respeitando estritamente o tom de voz da Persona e da Empresa. Evite formatações complexas que quebram no WhatsApp.
+${collectionContext}
+
+DIRETRIZES GERAIS:
+- "route": Use apenas quando a intenção for clara E (se houver campos obrigatórios) todos estiverem coletados.
+- "collect": Use se você já sabe o setor, mas faltam dados obrigatórios para preencher.
+- "ask": Use para triagem inicial quando não sabe o setor.
+- Sempre retorne os dados extraídos no campo "extracted_data" se encontrar algo que se encaixe nas variáveis do setor.
             `,
-            prompt: `Mensagem do Cliente recebida no WhatsApp:\n"${messageText}"`
+            prompt: `Mensagem Atual do Cliente:\n"${messageText}"`
         });
 
         return result.object;
