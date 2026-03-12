@@ -32,7 +32,8 @@ export async function updateSession(request: NextRequest) {
     const isAuthPage =
         request.nextUrl.pathname.startsWith('/login') ||
         request.nextUrl.pathname.startsWith('/register') ||
-        request.nextUrl.pathname.startsWith('/invite');
+        request.nextUrl.pathname.startsWith('/invite') ||
+        request.nextUrl.pathname.startsWith('/auth');
     const isWebhook = request.nextUrl.pathname.startsWith('/api/webhooks');
     const isAuthApi = request.nextUrl.pathname.startsWith('/api/auth');
     const isInviteApi = request.nextUrl.pathname.startsWith('/api/team/invite');
