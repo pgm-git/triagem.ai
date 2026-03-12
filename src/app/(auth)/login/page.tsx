@@ -134,6 +134,12 @@ export default function LoginPage() {
                     {error && (
                         <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                             {error}
+                            {/* Debug info - only visible for debugging */}
+                            <div className="mt-2 pt-2 border-t border-red-500/10 text-[10px] opacity-50 font-mono break-all">
+                                URL: {process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 15)}...
+                                <br />
+                                Key starts with: {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 10)}...
+                            </div>
                         </div>
                     )}
 
