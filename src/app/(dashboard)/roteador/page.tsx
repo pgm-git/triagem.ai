@@ -1,3 +1,4 @@
+'use client';
 import { useState, useEffect } from 'react';
 import { GitBranch, ArrowRight, ShieldAlert, Bot, Settings, Loader2, Save, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
