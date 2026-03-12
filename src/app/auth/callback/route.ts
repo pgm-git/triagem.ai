@@ -17,10 +17,11 @@ export async function GET(request: Request) {
             return NextResponse.redirect(`${origin}${next}`);
         } else {
             console.error('Auth exchange error:', error);
+            return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`);
         }
     }
 
-    // Return to login on error with an error code for the UI
-    console.log('Auth failed, redirecting to login');
-    return NextResponse.redirect(`${origin}/login?error=auth_failed`);
+    // Return to login on error
+    console.log('No code found in callback, redirecting to login');
+    return NextResponse.redirect(`${origin}/login?error=No+authentication+code+received`);
 }
