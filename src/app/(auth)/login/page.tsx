@@ -11,6 +11,8 @@ import {
     Loader2,
     MessageSquareMore,
 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -19,6 +21,16 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const errorParam = searchParams.get('error');
+        if (errorParam === 'auth_failed') {
+            setError('Falha na autenticação social. Verifique se o redirecionamento está configurado no Supabase.');
+        } else if (errorParam) {
+            setError(errorParam);
+        }
+    }, [searchParams]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
