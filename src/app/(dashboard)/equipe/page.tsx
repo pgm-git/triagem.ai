@@ -90,14 +90,18 @@ export default function EquipePage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: inviteEmail })
             });
+            const data = await res.json();
+
             if (res.ok) {
-                const { invite } = await res.json();
-                setInvites(prev => [invite, ...prev]);
+                setInvites(prev => [data.invite, ...prev]);
                 setIsInviteOpen(false);
                 setInviteEmail('');
+            } else {
+                alert(`Erro: ${data.details || data.error || 'Falha ao convidar'}`);
             }
         } catch (err) {
             console.error(err);
+            alert('Falha na conexão com o servidor.');
         } finally {
             setInviting(false);
         }

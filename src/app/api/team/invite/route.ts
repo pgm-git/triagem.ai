@@ -56,7 +56,14 @@ export async function POST(req: Request) {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase insert error details:', error);
+            return NextResponse.json({
+                error: 'Erro ao criar convite no banco de dados',
+                details: error.message,
+                code: error.code
+            }, { status: 400 });
+        }
 
         return NextResponse.json({ invite });
     } catch (err: any) {
