@@ -39,7 +39,7 @@ export function AppSidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { sidebarCollapsed, toggleSidebar } = useUIStore();
-    const { profile } = useUser(); // Hook to get user role!
+    const { profile, organization } = useUser();
 
     const handleLogout = async () => {
         const supabase = createClient();
@@ -51,17 +51,24 @@ export function AppSidebar() {
     return (
         <aside
             className={cn(
-                'fixed left-0 top-0 z-40 h-screen bg-slate-950 border-r border-slate-800 flex flex-col transition-all duration-200 ease-in-out',
+                'fixed left-0 top-0 z-40 h-screen border-r border-slate-800 flex flex-col transition-all duration-200 ease-in-out',
+                'bg-[var(--sidebar)]',
                 sidebarCollapsed ? 'w-[56px]' : 'w-[240px]'
             )}
         >
             {/* Logo */}
             <div className="h-14 flex items-center px-3 border-b border-slate-800 gap-2 shrink-0">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/10 shrink-0">
-                    <MessageSquareMore className="w-4 h-4 text-blue-400" />
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/10 shrink-0 overflow-hidden">
+                    {organization?.logo_url ? (
+                        <img src={organization.logo_url} alt="Logo" className="w-full h-full object-contain" />
+                    ) : (
+                        <MessageSquareMore className="w-4 h-4 text-blue-400" />
+                    )}
                 </div>
                 {!sidebarCollapsed && (
-                    <span className="text-sm font-semibold text-white truncate">TriaGO</span>
+                    <span className="text-sm font-semibold text-white truncate">
+                        {organization?.name || 'TriaGO'}
+                    </span>
                 )}
             </div>
 

@@ -6,11 +6,14 @@ import { UserProvider } from '@/contexts/user-context';
 import { useUIStore } from '@/stores/ui';
 import { cn } from '@/lib/utils';
 
+import { ThemeInitializer } from '../shared/theme-initializer';
+
 export function AppShell({ children }: { children: React.ReactNode }) {
     const { sidebarCollapsed } = useUIStore();
 
     return (
         <UserProvider>
+            <ThemeInitializer />
             <div className="min-h-screen bg-slate-950">
                 <AppSidebar />
                 <div
