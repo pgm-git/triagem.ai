@@ -103,7 +103,7 @@ export default function SetupPage() {
                     )}
                 </div>
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Configurar {organization?.name || 'TriaGO'}</h1>
+                    <h1 className="text-2xl font-bold text-white tracking-tight">Configurar TriaGO</h1>
                     <p className="text-slate-500 text-sm">Vamos deixar tudo pronto para o seu primeiro atendimento</p>
                 </div>
             </div>

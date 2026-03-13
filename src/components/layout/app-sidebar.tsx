@@ -67,7 +67,7 @@ export function AppSidebar() {
                 </div>
                 {!sidebarCollapsed && (
                     <span className="text-sm font-semibold text-white truncate">
-                        {organization?.name || 'TriaGO'}
+                        TriaGO
                     </span>
                 )}
             </div>

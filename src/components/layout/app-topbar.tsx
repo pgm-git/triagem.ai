@@ -44,7 +44,7 @@ export function AppTopbar() {
                         orgInitial
                     )}
                 </div>
-                <span className="font-medium">{organization?.name || 'Carregando...'}</span>
+                <span className="font-medium">TriaGO</span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
             </button>
 
