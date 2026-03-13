@@ -11,18 +11,19 @@ export function ThemeInitializer() {
 
         const root = document.documentElement;
 
-        // Map organization colors to CSS variables
+        // Map organization colors to the new brand-prefixed CSS variables
         if (organization.primary_color) {
-            root.style.setProperty('--primary', organization.primary_color);
-            // Also update a "glow" version or similar if needed
-            root.style.setProperty('--primary-glow', `${organization.primary_color}33`); // 20% alpha
+            root.style.setProperty('--brand-primary', organization.primary_color);
         }
 
         if (organization.sidebar_color) {
-            root.style.setProperty('--sidebar-bg', organization.sidebar_color);
+            root.style.setProperty('--brand-sidebar', organization.sidebar_color);
         }
 
-        // We can add more mappings here as the design system evolves
+        // Potential for secondary color as well
+        if (organization.secondary_color) {
+            root.style.setProperty('--brand-secondary', organization.secondary_color);
+        }
     }, [organization]);
 
     return null; // This component doesn't render anything

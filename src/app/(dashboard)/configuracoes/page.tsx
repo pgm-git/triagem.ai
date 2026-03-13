@@ -115,15 +115,27 @@ export default function ConfiguracoesPage() {
                                 />
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-400">URL da Logomarca (PNG/SVG)</label>
-                                <input
-                                    type="text"
-                                    value={orgForm.logo_url}
-                                    onChange={(e) => setOrgForm({ ...orgForm, logo_url: e.target.value })}
-                                    placeholder="https://sua-logo.com/logo.png"
-                                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                />
+                            <div className="space-y-2 md:col-span-2">
+                                <label className="text-sm font-medium text-slate-400">Logomarca da Empresa</label>
+                                <div className="flex flex-col md:flex-row gap-4 items-start">
+                                    <div className="flex-1 w-full space-y-2">
+                                        <input
+                                            type="text"
+                                            value={orgForm.logo_url}
+                                            onChange={(e) => setOrgForm({ ...orgForm, logo_url: e.target.value })}
+                                            placeholder="https://sua-logo.com/logo.png"
+                                            className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                        />
+                                        <p className="text-[10px] text-slate-500">Recomendado: SVG ou PNG transparente (512x512px)</p>
+                                    </div>
+                                    <div className="w-20 h-20 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                                        {orgForm.logo_url ? (
+                                            <img src={orgForm.logo_url} alt="Preview" className="w-full h-full object-contain p-2" />
+                                        ) : (
+                                            <MessageSquareMore className="w-8 h-8 text-slate-700" />
+                                        )}
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="space-y-2">
