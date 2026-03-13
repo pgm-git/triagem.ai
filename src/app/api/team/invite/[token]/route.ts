@@ -28,6 +28,7 @@ export async function GET(
                 email, 
                 role, 
                 status, 
+                token,
                 organization_id,
                 organizations ( name, slug )
             `)
