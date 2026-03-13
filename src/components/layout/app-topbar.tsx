@@ -8,13 +8,14 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
 export function AppTopbar() {
-    const { profile } = useUser();
+    const { profile, organization } = useUser();
     const router = useRouter();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Get first letter of name, fallback to U
     const initial = profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'U';
+    const orgInitial = organization?.name ? organization.name.slice(0, 1).toUpperCase() : 'T';
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -36,10 +37,14 @@ export function AppTopbar() {
         <header className="h-14 border-b border-slate-800 bg-slate-950/80 backdrop-blur-sm flex items-center justify-between px-6">
             {/* Left — Account Selector */}
             <button className="flex items-center gap-2 text-sm text-slate-300 hover:text-white transition-colors cursor-pointer">
-                <div className="w-6 h-6 rounded-md bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-400">
-                    R
+                <div className="w-6 h-6 rounded-md bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-400 overflow-hidden">
+                    {organization?.logo_url ? (
+                        <img src={organization.logo_url} alt="Logo" className="w-full h-full object-contain" />
+                    ) : (
+                        orgInitial
+                    )}
                 </div>
-                <span className="font-medium">Minha Empresa</span>
+                <span className="font-medium">{organization?.name || 'Carregando...'}</span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
             </button>
 

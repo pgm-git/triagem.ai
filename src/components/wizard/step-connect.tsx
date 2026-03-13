@@ -1,6 +1,7 @@
 'use client';
 
 import { useSetupStore } from '@/stores/setup';
+import { useUser } from '@/contexts/user-context';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import {
@@ -9,10 +10,12 @@ import {
     Send,
     Zap,
     Loader2,
+    MessageSquareMore,
 } from 'lucide-react';
 
 export function StepConnect() {
     const { data } = useSetupStore();
+    const { organization } = useUser();
     const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
 
     const sectors = data.sectors?.filter((s) => s.is_active) || [];
@@ -20,10 +23,10 @@ export function StepConnect() {
     const hasFallback = !!data.fallback?.sectorId && !!data.fallback?.message;
 
     const checklist = [
-        { label: 'Tipo de roteamento', ok: !!data.routingType },
-        { label: `${sectors.length} setor${sectors.length !== 1 ? 'es' : ''} ativo${sectors.length !== 1 ? 's' : ''}`, ok: sectors.length >= 1 },
-        { label: `${rules.length} regra${rules.length !== 1 ? 's' : ''} ativa${rules.length !== 1 ? 's' : ''}`, ok: rules.length >= 1 },
-        { label: 'Fallback configurado', ok: hasFallback },
+        { label: 'Tipo de roteamento definido', ok: !!data.routingType },
+        { label: `${sectors.length} setor${sectors.length !== 1 ? 'es' : ''} configurado${sectors.length !== 1 ? 's' : ''}`, ok: sectors.length >= 1 },
+        { label: 'Regras de automação prontas', ok: rules.length >= 0 }, // Rules are optional now
+        { label: 'Setor de contingência (Ouvidoria)', ok: hasFallback },
     ];
 
     const allOk = checklist.every((item) => item.ok);
@@ -36,64 +39,65 @@ export function StepConnect() {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="text-center space-y-2">
-                <h2 className="text-xl font-bold text-white">Tudo pronto!</h2>
-                <p className="text-sm text-slate-400">Revise sua configuração e conecte o WhatsApp</p>
+        <div className="space-y-8 animate-in fade-in zoom-in duration-300">
+            <div className="text-center space-y-3">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 shadow-xl shadow-emerald-500/10 mb-2">
+                    <Zap className="w-8 h-8 text-emerald-400 fill-emerald-400/20" />
+                </div>
+                <h2 className="text-2xl font-bold text-white tracking-tight">Estamos prontos!</h2>
+                <p className="text-slate-400 max-w-sm mx-auto">
+                    Sua estrutura de atendimento foi configurada com sucesso para a
+                    <span className="text-white font-bold mx-1">{organization?.name || 'sua empresa'}</span>.
+                </p>
             </div>
 
-            {/* Pre-checklist */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
-                <h3 className="text-sm font-semibold text-slate-300 mb-3">Checklist de configuração</h3>
-                {checklist.map((item, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                        <CheckCircle2
-                            className={cn('w-5 h-5', item.ok ? 'text-emerald-400' : 'text-slate-600')}
-                        />
-                        <span className={cn('text-sm', item.ok ? 'text-slate-300' : 'text-slate-500')}>
-                            {item.label}
-                        </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Pre-checklist */}
+                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Resumo da Configuração</h3>
+                    <div className="space-y-3">
+                        {checklist.map((item, index) => (
+                            <div key={index} className="flex items-center gap-3">
+                                <div className={cn(
+                                    "w-5 h-5 rounded-full flex items-center justify-center shrink-0",
+                                    item.ok ? "bg-emerald-500/10 text-emerald-500" : "bg-slate-800 text-slate-600"
+                                )}>
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                </div>
+                                <span className={cn('text-sm', item.ok ? 'text-slate-300' : 'text-slate-500 font-medium')}>
+                                    {item.label}
+                                </span>
+                            </div>
+                        ))}
                     </div>
-                ))}
+                </div>
+
+                {/* Brand Preview */}
+                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-3">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest w-full text-left mb-2">Visual da Marca</p>
+                    <div
+                        className="w-16 h-16 rounded-2xl shadow-lg flex items-center justify-center mb-1"
+                        style={{ backgroundColor: organization?.primary_color || '#3b82f6' }}
+                    >
+                        {organization?.logo_url ? (
+                            <img src={organization.logo_url} alt="Logo" className="w-10 h-10 object-contain brightness-0 invert" />
+                        ) : (
+                            <MessageSquareMore className="w-8 h-8 text-white" />
+                        )}
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-sm font-bold text-white">{organization?.name}</p>
+                        <p className="text-[10px] text-slate-500 font-medium">Cor: {organization?.primary_color?.toUpperCase()}</p>
+                    </div>
+                </div>
             </div>
 
-            {/* Actions */}
-            <div className="space-y-3">
-                {/* Connect WhatsApp */}
-                <button className="w-full flex items-center justify-center gap-3 py-3 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-600/30 text-emerald-400 font-medium rounded-xl transition-all cursor-pointer">
-                    <Smartphone className="w-5 h-5" />
-                    Conectar WhatsApp
-                    <span className="px-2 py-0.5 text-[10px] bg-emerald-600/30 rounded-full">Em breve</span>
-                </button>
-
-                {/* Test */}
-                <button
-                    onClick={simulateTest}
-                    disabled={!allOk || testStatus === 'testing'}
-                    className={cn(
-                        'w-full flex items-center justify-center gap-2 py-3 border rounded-xl font-medium transition-all cursor-pointer disabled:cursor-not-allowed',
-                        testStatus === 'success'
-                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                            : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800 disabled:opacity-50'
-                    )}
-                >
-                    {testStatus === 'testing' ? (
-                        <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Testando roteamento...
-                        </>
-                    ) : testStatus === 'success' ? (
-                        <>
-                            <CheckCircle2 className="w-4 h-4" />
-                            Teste concluído com sucesso!
-                        </>
-                    ) : (
-                        <>
-                            <Send className="w-4 h-4" />
-                            Enviar teste
-                        </>
-                    )}
-                </button>
+            {/* Warning if no channels */}
+            <div className="p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl flex gap-3">
+                <Smartphone className="w-5 h-5 text-amber-500 shrink-0" />
+                <p className="text-xs text-amber-500/80 leading-relaxed">
+                    <strong>Atenção:</strong> Lembre-se de conectar seu WhatsApp na aba <span className="font-bold">Canais</span> após finalizar o wizard para que as mensagens comecem a ser roteadas.
+                </p>
             </div>
         </div>
     );
