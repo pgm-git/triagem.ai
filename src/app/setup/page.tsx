@@ -5,15 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useUser } from '@/contexts/user-context';
 import { StepIndicator } from '@/components/wizard/step-indicator';
-import { StepRoutingType } from '@/components/wizard/step-routing-type';
+import { StepPersona } from '@/components/wizard/step-persona';
 import { StepSectors } from '@/components/wizard/step-sectors';
-import { StepRules } from '@/components/wizard/step-rules';
 import { StepFallback } from '@/components/wizard/step-fallback';
 import { StepConnect } from '@/components/wizard/step-connect';
-import { ArrowLeft, ArrowRight, Zap, MessageSquareMore, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Zap, MessageSquareMore, Loader2, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const stepLabels = ['Roteamento', 'Setores', 'Regras', 'Fallback', 'Conectar'];
+const stepLabels = ['Persona IA', 'Setores', 'Fallback', 'Conectar'];
 
 export default function SetupPage() {
     const { currentStep, setStep, data, markComplete } = useSetupStore();
@@ -24,18 +23,14 @@ export default function SetupPage() {
     const canAdvance = (): boolean => {
         switch (currentStep) {
             case 1:
-                return !!data.routingType;
+                return (data.persona?.selectedTraits?.length || 0) >= 1;
             case 2: {
-                const activeSectors = data.sectors?.filter((s) => s.is_active && s.name) || [];
-                return activeSectors.length >= 1;
+                const mappedSectors = data.sectors?.filter((s) => s.is_active && s.destination) || [];
+                return mappedSectors.length >= 1;
             }
-            case 3: {
-                const activeRules = (data.rules as { is_active?: boolean }[])?.filter((r) => r.is_active) || [];
-                return activeRules.length >= 1;
-            }
-            case 4:
+            case 3:
                 return !!data.fallback?.sectorId && !!data.fallback?.message;
-            case 5:
+            case 4:
                 return true;
             default:
                 return false;
@@ -43,14 +38,14 @@ export default function SetupPage() {
     };
 
     const handleNext = () => {
-        if (currentStep < 5) {
-            setStep((currentStep + 1) as 1 | 2 | 3 | 4 | 5);
+        if (currentStep < 4) {
+            setStep((currentStep + 1) as 1 | 2 | 3 | 4);
         }
     };
 
     const handleBack = () => {
         if (currentStep > 1) {
-            setStep((currentStep - 1) as 1 | 2 | 3 | 4 | 5);
+            setStep((currentStep - 1) as 1 | 2 | 3 | 4);
         }
     };
 
@@ -79,20 +74,27 @@ export default function SetupPage() {
     const renderStep = () => {
         switch (currentStep) {
             case 1:
-                return <StepRoutingType />;
+                return <StepPersona />;
             case 2:
                 return <StepSectors />;
             case 3:
-                return <StepRules />;
-            case 4:
                 return <StepFallback />;
-            case 5:
+            case 4:
                 return <StepConnect />;
         }
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 bg-slate-950/50 p-8 rounded-3xl border border-slate-800/50 backdrop-blur-sm shadow-2xl">
+        <div className="max-w-4xl mx-auto space-y-8 bg-slate-950/50 p-8 rounded-3xl border border-slate-800/50 backdrop-blur-sm shadow-2xl relative overflow-hidden">
+            {/* Exit Button */}
+            <button
+                onClick={() => router.push('/dashboard')}
+                className="absolute top-6 right-6 flex items-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-red-500/10 text-slate-500 hover:text-red-400 border border-slate-800 hover:border-red-500/20 rounded-lg text-xs font-bold transition-all cursor-pointer group"
+            >
+                <LogOut className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+                Sair do Setup
+            </button>
+
             {/* Header */}
             <div className="text-center space-y-3">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 shadow-lg shadow-blue-500/10">

@@ -194,9 +194,8 @@ export interface RoutingLog {
 
 // Wizard types
 export interface WizardData {
-  routingType: Organization['routing_type'];
+  persona: PersonaConfig;
   sectors: Partial<Sector>[];
-  rules: Partial<Rule>[];
   fallback: {
     sectorId: string;
     message: string;

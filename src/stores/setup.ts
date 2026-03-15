@@ -2,10 +2,10 @@ import { create } from 'zustand';
 import type { WizardData } from '@/types';
 
 interface SetupStore {
-    currentStep: 1 | 2 | 3 | 4 | 5;
+    currentStep: 1 | 2 | 3 | 4;
     data: Partial<WizardData>;
     setupComplete: boolean;
-    setStep: (step: 1 | 2 | 3 | 4 | 5) => void;
+    setStep: (step: 1 | 2 | 3 | 4) => void;
     updateData: (data: Partial<WizardData>) => void;
     reset: () => void;
     markComplete: () => void;
@@ -13,7 +13,9 @@ interface SetupStore {
 
 export const useSetupStore = create<SetupStore>((set) => ({
     currentStep: 1,
-    data: {},
+    data: {
+        persona: { selectedTraits: ['professional', 'welcoming'] }
+    },
     setupComplete: false,
     setStep: (currentStep) => set({ currentStep }),
     updateData: (newData) =>

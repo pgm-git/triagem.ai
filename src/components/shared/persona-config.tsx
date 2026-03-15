@@ -75,15 +75,23 @@ function blendMessages(traits: PersonaTraitId[]): { greeting: string; routing: s
     };
 }
 
-export function PersonaConfig() {
-    const [selected, setSelected] = useState<PersonaTraitId[]>(['professional', 'welcoming']);
+export function PersonaConfig({
+    value = ['professional', 'welcoming'],
+    onChange
+}: {
+    value?: PersonaTraitId[],
+    onChange?: (traits: PersonaTraitId[]) => void
+}) {
+    const selected = value;
 
     const toggleTrait = (id: PersonaTraitId) => {
-        setSelected((prev) => {
-            if (prev.includes(id)) return prev.filter((t) => t !== id);
-            if (prev.length >= 2) return [prev[1], id];
-            return [...prev, id];
-        });
+        const newSelected = selected.includes(id)
+            ? selected.filter((t) => t !== id)
+            : selected.length >= 2
+                ? [selected[1], id]
+                : [...selected, id];
+
+        onChange?.(newSelected as PersonaTraitId[]);
     };
 
     const messages = useMemo(() => blendMessages(selected), [selected]);

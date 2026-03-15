@@ -10,7 +10,7 @@ export async function POST(request: Request) {
 
     try {
         const body = (await request.json()) as WizardData;
-        const { routingType, sectors, fallback } = body;
+        const { persona, sectors, fallback } = body;
 
         // Get organization ID
         const { data: profile } = await supabase
@@ -25,54 +25,40 @@ export async function POST(request: Request) {
 
         const orgId = profile.organization_id;
 
-        // 1. Update Organization routing_type and setup_complete
+        // 1. Update Organization persona_traits and setup_complete
         const { error: orgError } = await supabase
             .from('organizations')
             .update({
-                routing_type: routingType || 'hybrid',
+                persona_traits: persona?.selectedTraits || [],
                 setup_complete: true
             })
             .eq('id', orgId);
 
         if (orgError) throw orgError;
 
-        // 2. Clear old default sectors (since they might have been created by trigger)
-        // Only if sectors were provided
+        // 2. Update existing sectors destination
         if (sectors && sectors.length > 0) {
-            await supabase.from('sectors').delete().eq('organization_id', orgId);
-
-            // 3. Insert new sectors
-            const newSectors = sectors.map((s, index) => ({
-                organization_id: orgId,
-                name: s.name || `Setor ${index + 1}`,
-                icon: s.icon || '📂',
-                destination: s.destination || '',
-                is_active: s.is_active !== false,
-                priority: s.priority ?? index,
-                is_fallback: false
-            }));
-
-            // Include Fallback sector if specified (usually Ouvidoria)
-            if (fallback && fallback.message) {
-                newSectors.push({
-                    organization_id: orgId,
-                    name: 'Ouvidoria (Fallback)',
-                    icon: '📢',
-                    destination: '',
-                    is_active: true,
-                    priority: 999,
-                    is_fallback: true
-                });
+            for (const sector of sectors) {
+                if (sector.id && sector.destination) {
+                    await supabase
+                        .from('sectors')
+                        .update({ destination: sector.destination })
+                        .eq('id', sector.id)
+                        .eq('organization_id', orgId);
+                }
             }
-
-            const { error: sectorsError } = await supabase
-                .from('sectors')
-                .insert(newSectors);
-
-            if (sectorsError) throw sectorsError;
         }
 
-        // We skip rules for now since they are superseded by AI in Sprint 3.
+        // 3. Handle Fallback message if it was changed
+        if (fallback && fallback.message) {
+            await supabase
+                .from('sectors')
+                .update({
+                    fallback_message: fallback.message,
+                })
+                .eq('organization_id', orgId)
+                .eq('is_fallback', true);
+        }
 
         return NextResponse.json({ success: true });
     } catch (error: any) {

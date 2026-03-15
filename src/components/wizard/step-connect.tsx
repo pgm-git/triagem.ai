@@ -18,15 +18,14 @@ export function StepConnect() {
     const { organization } = useUser();
     const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
 
-    const sectors = data.sectors?.filter((s) => s.is_active) || [];
-    const rules = (data.rules as { is_active?: boolean }[])?.filter((r) => r.is_active) || [];
+    const sectorsCount = data.sectors?.filter((s) => s.is_active && s.destination).length || 0;
+    const hasPersona = (data.persona?.selectedTraits?.length || 0) >= 1;
     const hasFallback = !!data.fallback?.sectorId && !!data.fallback?.message;
 
     const checklist = [
-        { label: 'Tipo de roteamento definido', ok: !!data.routingType },
-        { label: `${sectors.length} setor${sectors.length !== 1 ? 'es' : ''} configurado${sectors.length !== 1 ? 's' : ''}`, ok: sectors.length >= 1 },
-        { label: 'Regras de automação prontas', ok: rules.length >= 0 }, // Rules are optional now
-        { label: 'Setor de contingência (Ouvidoria)', ok: hasFallback },
+        { label: 'Personalidade IA definida', ok: hasPersona },
+        { label: `${sectorsCount} setor${sectorsCount !== 1 ? 'es' : ''} mapeado${sectorsCount !== 1 ? 's' : ''}`, ok: sectorsCount >= 1 },
+        { label: 'Fallback de contingência', ok: hasFallback },
     ];
 
     const allOk = checklist.every((item) => item.ok);
