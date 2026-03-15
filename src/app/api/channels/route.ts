@@ -229,17 +229,13 @@ export async function DELETE(request: NextRequest) {
         }
 
         // 2. Provider cleanup if necessary
-        if (instance.provider === 'uazapi') {
-            const adminToken = process.env.UAZAPI_ADMIN_TOKEN;
-            const baseUrl = instance.uazapi_url || process.env.UAZAPI_BASE_URL;
-
-            if (adminToken && baseUrl && instance.instance_name) {
-                console.log(`[Channels DELETE] Requesting UazAPI cleanup for: ${instance.instance_name}`);
-                await UazAPIProvider.deleteInstance(
-                    { baseUrl, adminToken },
-                    instance.instance_name
-                ).catch(err => console.error('[Channels DELETE] UazAPI cleanup failed:', err));
-            }
+        if (instance.provider === 'uazapi' && instance.uazapi_token && instance.uazapi_url) {
+            console.log(`[Channels DELETE] Requesting UazAPI cleanup for: ${instance.instance_name}`);
+            const provider = new UazAPIProvider({
+                baseUrl: instance.uazapi_url,
+                instanceToken: instance.uazapi_token,
+            });
+            await provider.deleteInstance().catch(err => console.error('[Channels DELETE] UazAPI cleanup failed:', err));
         }
 
         // 3. Delete from database
