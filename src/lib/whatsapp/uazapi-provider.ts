@@ -185,15 +185,45 @@ export class UazAPIProvider implements IWhatsAppProvider {
         }
     }
 
-    /** DELETE /instance/delete — Remove a instância do servidor */
+    /**
+     * DELETE /instance/delete — Remove a instância do servidor (Admin mode)
+     */
+    static async deleteInstance(
+        config: UazAPIAdminConfig,
+        instanceName: string
+    ): Promise<{ success: boolean; error?: string }> {
+        try {
+            const url = `${config.baseUrl}/instance/delete/${instanceName}`;
+            console.log(`[UazAPI] Deleting instance at: ${url}`);
+
+            const res = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'admintoken': config.adminToken,
+                },
+            });
+
+            const data = await UazAPIProvider.safeJson(res);
+            if (!res.ok) return { success: false, error: data?.message as string || `Erro ${res.status}` };
+
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: (err as Error).message };
+        }
+    }
+
+    /** 
+     * DELETE /instance/delete — Remove a instância usando o token da própria instância
+     * @deprecated Use static deleteInstance with adminToken for better reliability
+     */
     async deleteInstance(): Promise<{ success: boolean; error?: string }> {
         try {
             const res = await fetch(`${this.baseUrl}/instance/delete`, {
                 method: 'DELETE',
                 headers: { 'token': this.token },
             });
-            const data = await res.json();
-            if (!res.ok) return { success: false, error: data.message || 'Falha ao excluir instância' };
+            const data = await UazAPIProvider.safeJson(res);
+            if (!res.ok) return { success: false, error: data?.message as string || 'Falha ao excluir instância' };
             return { success: true };
         } catch (err) {
             return { success: false, error: (err as Error).message };
