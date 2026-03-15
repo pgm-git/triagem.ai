@@ -149,24 +149,38 @@ export default function CanaisPage() {
     };
 
     const handleAction = async (instanceId: string, action: 'reconnect' | 'logout' | 'connect') => {
+        const instance = instances.find(i => i.id === instanceId);
+        if (action !== 'logout') {
+            setSelectedProvider(instance?.provider as any);
+            setQrCodeData(null);
+            setConnectStep('connecting');
+            setShowNewDrawer(true);
+        }
+
         setActionLoading(prev => ({ ...prev, [instanceId]: true }));
         try {
             const url = action === 'logout'
                 ? `/api/channels/${instanceId}/logout`
                 : `/api/channels/${instanceId}/connect`;
 
-            const res = await fetch(url, { method: 'POST' });
+            const method = 'POST';
+            const body = (action === 'reconnect' || action === 'connect') ? JSON.stringify({ force: true }) : undefined;
+
+            const res = await fetch(url, {
+                method,
+                headers: body ? { 'Content-Type': 'application/json' } : undefined,
+                body
+            });
             const data = await res.json();
 
             if (!res.ok) {
                 alert(`Erro: ${data.error || 'Falha na ação'}`);
+                if (action !== 'logout') setShowNewDrawer(false);
                 return;
             }
 
             if (data.qrCode) {
                 setQrCodeData(data.qrCode);
-                setConnectStep('connecting');
-                setShowNewDrawer(true);
             }
 
             // Refresh instances
@@ -178,6 +192,7 @@ export default function CanaisPage() {
         } catch (err) {
             console.error(err);
             alert('Erro de conexão');
+            if (action !== 'logout') setShowNewDrawer(false);
         } finally {
             setActionLoading(prev => ({ ...prev, [instanceId]: false }));
         }

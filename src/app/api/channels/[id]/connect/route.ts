@@ -18,6 +18,9 @@ export async function POST(
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     try {
+        const body = await request.json().catch(() => ({}));
+        const force = body.force === true;
+
         const { data: instance, error: fetchError } = await supabase
             .from('whatsapp_instances')
             .select('*')
@@ -41,6 +44,11 @@ export async function POST(
                 baseUrl: instance.uazapi_url,
                 instanceToken: instance.uazapi_token,
             });
+
+            if (force) {
+                console.log(`[Channel Connect] Forcing logout for ${id} before reconnecting`);
+                await provider.logout().catch(err => console.error('[Channel Connect] Force logout failed:', err));
+            }
 
             const result = await provider.connect();
 
