@@ -81,9 +81,6 @@ export function SectorDrawer({ open, sector, onClose, onSave }: SectorDrawerProp
     const updateField = (field: string, value: string | boolean | number) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
-
-    const icons = ['📂', '💰', '🛠️', '📣', '🤝', '🚀', '⭐', '📱', '📧', '📍', '💡', '✅'];
-
     const updateTrigger = (updates: Partial<SectorTrigger>) => {
         const updated = { ...trigger, ...updates };
         setForm((prev) => ({ ...prev, triggers: [updated] }));
