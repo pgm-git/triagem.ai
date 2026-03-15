@@ -32,6 +32,7 @@ export function SectorDrawer({ open, sector, onClose, onSave }: SectorDrawerProp
     const [newKeyword, setNewKeyword] = useState('');
     const [channels, setChannels] = useState<{ id: string, name: string, phone?: string }[]>([]);
     const [isLoadingChannels, setIsLoadingChannels] = useState(false);
+    const [showIconPicker, setShowIconPicker] = useState(false);
 
     useEffect(() => {
         const fetchChannels = async () => {
@@ -71,6 +72,7 @@ export function SectorDrawer({ open, sector, onClose, onSave }: SectorDrawerProp
         }
         setActiveTab('dados');
         setNewKeyword('');
+        setShowIconPicker(false);
     }, [sector, open]);
 
     if (!open) return null;
@@ -241,28 +243,55 @@ export function SectorDrawer({ open, sector, onClose, onSave }: SectorDrawerProp
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-slate-300">Ícone</label>
-                                    <div className="flex flex-wrap gap-2 p-2 bg-slate-800/30 border border-slate-700 rounded-lg">
-                                        {icons.map((emoji) => (
-                                            <button
-                                                key={emoji}
-                                                type="button"
-                                                onClick={() => updateField('icon', emoji)}
-                                                className={cn(
-                                                    "w-8 h-8 flex items-center justify-center rounded-md transition-all hover:bg-slate-700",
-                                                    form.icon === emoji ? "bg-blue-600 text-white" : "text-lg"
-                                                )}
-                                            >
-                                                {emoji}
-                                            </button>
-                                        ))}
-                                        <input
-                                            type="text"
-                                            value={icons.includes(form.icon || '') ? '' : form.icon || ''}
-                                            onChange={(e) => updateField('icon', e.target.value)}
-                                            placeholder="Emoji"
-                                            className="w-8 h-8 p-0 bg-transparent border-none text-center text-lg focus:outline-none placeholder:text-slate-600"
-                                            maxLength={2}
-                                        />
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowIconPicker(!showIconPicker)}
+                                            className="w-full flex items-center gap-3 px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm hover:bg-slate-800 transition-all cursor-pointer"
+                                        >
+                                            <span className="text-xl">{form.icon || '📂'}</span>
+                                            <span className="text-slate-400 text-xs">Trocar ícone</span>
+                                        </button>
+
+                                        {showIconPicker && (
+                                            <>
+                                                <div
+                                                    className="fixed inset-0 z-10"
+                                                    onClick={() => setShowIconPicker(false)}
+                                                />
+                                                <div className="absolute top-full left-0 mt-2 p-3 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-20 w-64 animate-in fade-in zoom-in-95 duration-200">
+                                                    <div className="grid grid-cols-4 gap-2 mb-3">
+                                                        {icons.map((emoji) => (
+                                                            <button
+                                                                key={emoji}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    updateField('icon', emoji);
+                                                                    setShowIconPicker(false);
+                                                                }}
+                                                                className={cn(
+                                                                    "w-10 h-10 flex items-center justify-center rounded-lg transition-all hover:bg-slate-800",
+                                                                    form.icon === emoji ? "bg-blue-600/20 border border-blue-500/50" : ""
+                                                                )}
+                                                            >
+                                                                <span className="text-lg">{emoji}</span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    <div className="pt-3 border-t border-slate-800">
+                                                        <label className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-2 block">Customizado (Emoji)</label>
+                                                        <input
+                                                            type="text"
+                                                            value={icons.includes(form.icon || '') ? '' : form.icon || ''}
+                                                            onChange={(e) => updateField('icon', e.target.value)}
+                                                            placeholder="Cole um emoji aqui..."
+                                                            className="w-full px-2 py-1.5 bg-slate-800 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            maxLength={4}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="space-y-2">
