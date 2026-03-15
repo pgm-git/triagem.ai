@@ -169,4 +169,34 @@ export class UazAPIProvider implements IWhatsAppProvider {
             return { success: false, error: (err as Error).message };
         }
     }
+
+    /** POST /instance/logout — Desconecta a instância */
+    async logout(): Promise<{ success: boolean; error?: string }> {
+        try {
+            const res = await fetch(`${this.baseUrl}/instance/logout`, {
+                method: 'POST',
+                headers: { 'token': this.token },
+            });
+            const data = await res.json();
+            if (!res.ok) return { success: false, error: data.message || 'Falha ao desconectar' };
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: (err as Error).message };
+        }
+    }
+
+    /** DELETE /instance/delete — Remove a instância do servidor */
+    async deleteInstance(): Promise<{ success: boolean; error?: string }> {
+        try {
+            const res = await fetch(`${this.baseUrl}/instance/delete`, {
+                method: 'DELETE',
+                headers: { 'token': this.token },
+            });
+            const data = await res.json();
+            if (!res.ok) return { success: false, error: data.message || 'Falha ao excluir instância' };
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: (err as Error).message };
+        }
+    }
 }

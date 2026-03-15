@@ -101,3 +101,58 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: err.message || 'Internal Server Error', details: err }, { status: 500 });
     }
 }
+export async function PATCH(req: Request) {
+    try {
+        const body = await req.json();
+        const { profile_id, role } = body;
+
+        if (!profile_id || !role) {
+            return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+        }
+
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+        // Get requester profile
+        const { data: requester } = await supabase
+            .from('profiles')
+            .select('organization_id, role')
+            .eq('id', user.id)
+            .single();
+
+        if (!requester?.organization_id || (requester.role !== 'admin' && requester.role !== 'owner')) {
+            return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+        }
+
+        // Get target profile to ensure same org
+        const { data: target } = await supabase
+            .from('profiles')
+            .select('organization_id, role')
+            .eq('id', profile_id)
+            .single();
+
+        if (!target || target.organization_id !== requester.organization_id) {
+            return NextResponse.json({ error: 'User not found in your organization' }, { status: 404 });
+        }
+
+        // Security check: Only owners can change other owners or promote to owner (if we add that)
+        // For now, let's keep it simple but safe: admins can't touch owners.
+        if (target.role === 'owner' && requester.role !== 'owner') {
+            return NextResponse.json({ error: 'Admins cannot modify owner roles' }, { status: 403 });
+        }
+
+        const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ role })
+            .eq('id', profile_id);
+
+        if (updateError) throw updateError;
+
+        return NextResponse.json({ success: true });
+    } catch (err: any) {
+        console.error('API /team PATCH error:', err);
+        return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
+    }
+}

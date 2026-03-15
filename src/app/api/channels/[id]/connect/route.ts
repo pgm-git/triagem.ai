@@ -3,6 +3,7 @@
 // UazAPI: generates QR Code | Meta: validates token
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 import { UazAPIProvider } from '@/lib/whatsapp/uazapi-provider';
 import { MetaCloudProvider } from '@/lib/whatsapp/meta-provider';
 
@@ -11,25 +12,21 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params;
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     try {
-        // TODO: Fetch instance from Supabase
-        // const { data: instance } = await supabase
-        //   .from('whatsapp_instances')
-        //   .select()
-        //   .eq('id', id)
-        //   .single();
-        // if (!instance) return NextResponse.json({ error: 'Instance not found' }, { status: 404 });
+        const { data: instance, error: fetchError } = await supabase
+            .from('whatsapp_instances')
+            .select('*')
+            .eq('id', id)
+            .single();
 
-        // Simulated instance for dev — will come from DB
-        const instance = {
-            id,
-            provider: 'uazapi' as const,
-            uazapi_token: '',  // Would come from DB
-            uazapi_url: process.env.UAZAPI_BASE_URL || '',
-            meta_access_token: '',
-            meta_phone_number_id: '',
-        };
+        if (fetchError || !instance) {
+            return NextResponse.json({ error: 'Instância não encontrada' }, { status: 404 });
+        }
 
         // ── UazAPI: Generate QR Code ──────────────────────
         if (instance.provider === 'uazapi') {
@@ -54,8 +51,8 @@ export async function POST(
                 );
             }
 
-            // TODO: Update status in DB
-            // await supabase.from('whatsapp_instances').update({ status: 'qr_pending' }).eq('id', id);
+            // Update status in DB
+            await supabase.from('whatsapp_instances').update({ status: 'qr_pending' }).eq('id', id);
 
             return NextResponse.json({
                 success: true,
@@ -82,8 +79,8 @@ export async function POST(
                 );
             }
 
-            // TODO: Update status in DB
-            // await supabase.from('whatsapp_instances').update({ status: 'connected' }).eq('id', id);
+            // Update status in DB
+            await supabase.from('whatsapp_instances').update({ status: 'connected' }).eq('id', id);
 
             return NextResponse.json({
                 success: true,
@@ -93,8 +90,8 @@ export async function POST(
         }
 
         return NextResponse.json({ error: 'Provider desconhecido' }, { status: 400 });
-    } catch (error) {
+    } catch (error: any) {
         console.error(`[Channel Connect] Error for ${id}:`, error);
-        return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+        return NextResponse.json({ error: error.message || 'Internal error' }, { status: 500 });
     }
 }

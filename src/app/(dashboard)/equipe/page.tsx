@@ -16,6 +16,7 @@ export default function EquipePage() {
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviting, setInviting] = useState(false);
     const [copiedToken, setCopiedToken] = useState<string | null>(null);
+    const [inviteRole, setInviteRole] = useState<'agent' | 'admin'>('agent');
 
     useEffect(() => {
         const loadData = async () => {
@@ -88,7 +89,10 @@ export default function EquipePage() {
             const res = await fetch('/api/team/invite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: inviteEmail })
+                body: JSON.stringify({
+                    email: inviteEmail,
+                    role: inviteRole
+                })
             });
             const data = await res.json();
 
@@ -96,6 +100,7 @@ export default function EquipePage() {
                 setInvites(prev => [data.invite, ...prev]);
                 setIsInviteOpen(false);
                 setInviteEmail('');
+                setInviteRole('agent');
             } else {
                 alert(`Erro: ${data.details || data.error || 'Falha ao convidar'}`);
             }
@@ -167,12 +172,25 @@ export default function EquipePage() {
                                         </div>
                                         <div className="font-medium text-slate-200">
                                             {member.full_name || 'Sem Nome'}
-                                            {member.role === 'admin' && (
-                                                <span className="ml-2 inline-flex items-center gap-1 text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                                                    Admin
-                                                </span>
-                                            )}
                                         </div>
+                                        <select
+                                            value={member.role}
+                                            onChange={async (e) => {
+                                                const newRole = e.target.value;
+                                                setMembers(prev => prev.map(m => m.id === member.id ? { ...m, role: newRole } : m));
+                                                // Automatic save for role
+                                                await fetch('/api/team', {
+                                                    method: 'PATCH',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ profile_id: member.id, role: newRole })
+                                                });
+                                            }}
+                                            className="text-[10px] uppercase font-bold bg-slate-800 border-none text-slate-400 focus:ring-0 cursor-pointer rounded px-1 py-0.5"
+                                        >
+                                            <option value="agent">Agente</option>
+                                            <option value="admin">Admin</option>
+                                            <option value="owner">Dono</option>
+                                        </select>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 text-slate-400">
@@ -234,7 +252,15 @@ export default function EquipePage() {
                                                 <Clock className="w-4 h-4" />
                                             </div>
                                             <div>
-                                                <div className="font-medium text-slate-200">{invite.email}</div>
+                                                <div className="font-medium text-slate-200 flex items-center gap-2">
+                                                    {invite.email}
+                                                    <span className={cn(
+                                                        "text-[10px] uppercase font-bold px-1.5 py-0.5 rounded",
+                                                        invite.role === 'admin' ? "bg-amber-500/10 text-amber-500" : "bg-blue-500/10 text-blue-400"
+                                                    )}>
+                                                        {invite.role === 'admin' ? 'Admin' : 'Agente'}
+                                                    </span>
+                                                </div>
                                                 <div className="text-xs text-slate-500">
                                                     Enviado em {new Date(invite.created_at).toLocaleDateString()}
                                                 </div>
@@ -304,6 +330,17 @@ export default function EquipePage() {
                                     placeholder="agente@empresa.com"
                                     className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                                 />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-400 mb-1.5">Cargo / Permissão</label>
+                                <select
+                                    value={inviteRole}
+                                    onChange={(e) => setInviteRole(e.target.value as 'agent' | 'admin')}
+                                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                >
+                                    <option value="agent">Membro (Apenas Atendimento)</option>
+                                    <option value="admin">Administrador (Acesso Total)</option>
+                                </select>
                             </div>
                             <button
                                 type="submit"

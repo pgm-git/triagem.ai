@@ -121,4 +121,13 @@ export class MetaCloudProvider implements IWhatsAppProvider {
         }
         return { valid: false };
     }
+
+    /** Meta Cloud doesn't have a simple per-token logout/delete via API like UazAPI */
+    async logout(): Promise<{ success: boolean; error?: string }> {
+        return { success: true };
+    }
+
+    async deleteInstance(): Promise<{ success: boolean; error?: string }> {
+        return { success: true };
+    }
 }

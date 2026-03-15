@@ -33,4 +33,10 @@ export interface IWhatsAppProvider {
 
     /** Configure webhook URL */
     configureWebhook(url: string): Promise<{ success: boolean; error?: string }>;
+
+    /** Logout instance (disconnect) */
+    logout(): Promise<{ success: boolean; error?: string }>;
+
+    /** Delete instance from provider */
+    deleteInstance(): Promise<{ success: boolean; error?: string }>;
 }

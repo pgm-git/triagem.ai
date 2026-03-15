@@ -216,7 +216,38 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
-    const { error } = await supabase.from('whatsapp_instances').delete().eq('id', id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ success: true });
+    try {
+        // 1. Fetch instance to know provider and credentials
+        const { data: instance, error: fetchError } = await supabase
+            .from('whatsapp_instances')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !instance) {
+            return NextResponse.json({ error: 'Instância não encontrada' }, { status: 404 });
+        }
+
+        // 2. Provider cleanup if necessary
+        if (instance.provider === 'uazapi' && instance.uazapi_token && instance.uazapi_url) {
+            const provider = new UazAPIProvider({
+                baseUrl: instance.uazapi_url,
+                instanceToken: instance.uazapi_token,
+            });
+            await provider.deleteInstance(); // Attempt cleanup, don't block if fails
+        }
+
+        // 3. Delete from database
+        const { error: deleteError } = await supabase
+            .from('whatsapp_instances')
+            .delete()
+            .eq('id', id);
+
+        if (deleteError) throw deleteError;
+
+        return NextResponse.json({ success: true });
+    } catch (err: any) {
+        console.error('[Channels DELETE] Error:', err);
+        return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
+    }
 }

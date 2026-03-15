@@ -113,6 +113,7 @@ export default function CanaisPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+    const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
     // Fetch instances on mount
     useEffect(() => {
@@ -145,6 +146,61 @@ export default function CanaisPage() {
     const selectProvider = (provider: WhatsAppProvider) => {
         setSelectedProvider(provider);
         setConnectStep('form');
+    };
+
+    const handleAction = async (instanceId: string, action: 'reconnect' | 'logout' | 'connect') => {
+        setActionLoading(prev => ({ ...prev, [instanceId]: true }));
+        try {
+            const url = action === 'logout'
+                ? `/api/channels/${instanceId}/logout`
+                : `/api/channels/${instanceId}/connect`;
+
+            const res = await fetch(url, { method: 'POST' });
+            const data = await res.json();
+
+            if (!res.ok) {
+                alert(`Erro: ${data.error || 'Falha na ação'}`);
+                return;
+            }
+
+            if (data.qrCode) {
+                setQrCodeData(data.qrCode);
+                setConnectStep('connecting');
+                setShowNewDrawer(true);
+            }
+
+            // Refresh instances
+            const refreshRes = await fetch('/api/channels');
+            if (refreshRes.ok) {
+                const refreshData = await refreshRes.json();
+                setInstances(refreshData.instances || []);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Erro de conexão');
+        } finally {
+            setActionLoading(prev => ({ ...prev, [instanceId]: false }));
+        }
+    };
+
+    const handleDelete = async (instanceId: string) => {
+        if (!confirm('Tem certeza que deseja EXCLUIR esta instância? Isso também a removerá do servidor WhatsappFast.')) return;
+
+        setActionLoading(prev => ({ ...prev, [`delete-${instanceId}`]: true }));
+        try {
+            const res = await fetch(`/api/channels?id=${instanceId}`, { method: 'DELETE' });
+            if (res.ok) {
+                setInstances(prev => prev.filter(i => i.id !== instanceId));
+            } else {
+                const data = await res.json();
+                alert(`Erro ao excluir: ${data.error}`);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Erro de conexão ao excluir');
+        } finally {
+            setActionLoading(prev => ({ ...prev, [`delete-${instanceId}`]: false }));
+        }
     };
 
     const handleSubmit = async () => {
@@ -181,7 +237,7 @@ export default function CanaisPage() {
             const inst = data.instance;
             setInstances((prev) => [...prev, {
                 id: inst.id,
-                organization_id: 'org-1',
+                organization_id: inst.organization_id || 'org-1',
                 instance_name: inst.instance_name,
                 provider: inst.provider,
                 phone_number: inst.phone_number,
@@ -300,24 +356,50 @@ export default function CanaisPage() {
                                 {/* Actions */}
                                 <div className="flex items-center gap-2 mt-4">
                                     {instance.status !== 'connected' && (
-                                        <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg transition-all cursor-pointer">
+                                        <button
+                                            onClick={() => handleAction(instance.id, 'connect')}
+                                            disabled={actionLoading[instance.id]}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                                        >
                                             <Wifi className="w-3.5 h-3.5" />
-                                            Conectar
+                                            {actionLoading[instance.id] ? 'Processando...' : 'Conectar'}
                                         </button>
                                     )}
-                                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all cursor-pointer">
-                                        <RefreshCw className="w-3.5 h-3.5" />
+                                    <button
+                                        onClick={() => handleAction(instance.id, 'reconnect')}
+                                        disabled={actionLoading[instance.id]}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                                    >
+                                        <RefreshCw className={cn("w-3.5 h-3.5", actionLoading[instance.id] && "animate-spin")} />
                                         Reconectar
                                     </button>
                                     {instance.provider === 'uazapi' && (
-                                        <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all cursor-pointer">
+                                        <button
+                                            onClick={() => handleAction(instance.id, 'connect')}
+                                            disabled={actionLoading[instance.id]}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                                        >
                                             <QrCode className="w-3.5 h-3.5" />
                                             QR Code
                                         </button>
                                     )}
-                                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-all cursor-pointer ml-auto">
-                                        <WifiOff className="w-3.5 h-3.5" />
-                                        Desconectar
+                                    {instance.status === 'connected' && (
+                                        <button
+                                            onClick={() => handleAction(instance.id, 'logout')}
+                                            disabled={actionLoading[instance.id]}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                                        >
+                                            <WifiOff className="w-3.5 h-3.5" />
+                                            Desconectar
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => handleDelete(instance.id)}
+                                        disabled={actionLoading[`delete-${instance.id}`]}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-all cursor-pointer ml-auto disabled:opacity-50"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                        {actionLoading[`delete-${instance.id}`] ? 'Excluindo...' : 'Excluir'}
                                     </button>
                                 </div>
                             </div>

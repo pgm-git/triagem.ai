@@ -1,14 +1,20 @@
+// API Route: /api/channels/[id]/logout
+// Disconnects a WhatsApp instance without deleting it
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { UazAPIProvider } from '@/lib/whatsapp/uazapi-provider';
 import { MetaCloudProvider } from '@/lib/whatsapp/meta-provider';
 
-export async function GET(
+export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params;
     const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     try {
         const { data: instance, error: fetchError } = await supabase
@@ -21,40 +27,33 @@ export async function GET(
             return NextResponse.json({ error: 'Instância não encontrada' }, { status: 404 });
         }
 
-        let status;
-        if (instance.provider === 'uazapi') {
+        let success = false;
+
+        if (instance.provider === 'uazapi' && instance.uazapi_token && instance.uazapi_url) {
             const provider = new UazAPIProvider({
                 baseUrl: instance.uazapi_url,
                 instanceToken: instance.uazapi_token,
             });
-            status = await provider.getStatus();
-        } else {
+            const result = await provider.logout();
+            success = result.success;
+        } else if (instance.provider === 'meta_cloud') {
             const provider = new MetaCloudProvider({
                 accessToken: instance.meta_access_token,
                 phoneNumberId: instance.meta_phone_number_id,
             });
-            status = await provider.getStatus();
+            const result = await provider.logout();
+            success = result.success;
         }
 
-        // Optional: Update status in DB if it changed
-        if (status.state !== instance.status) {
-            await supabase
-                .from('whatsapp_instances')
-                .update({
-                    status: status.state,
-                    phone_number: status.phoneNumber || instance.phone_number
-                })
-                .eq('id', id);
-        }
+        // Update status in DB
+        await supabase
+            .from('whatsapp_instances')
+            .update({ status: 'disconnected' })
+            .eq('id', id);
 
-        return NextResponse.json({
-            ...status,
-            id,
-            provider: instance.provider,
-            lastChecked: new Date().toISOString(),
-        });
-    } catch (error: any) {
-        console.error(`[Channel Status] Error for ${id}:`, error);
-        return NextResponse.json({ error: error.message || 'Internal error' }, { status: 500 });
+        return NextResponse.json({ success });
+    } catch (err: any) {
+        console.error(`[Channel Logout] Error for ${id}:`, err);
+        return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
     }
 }
