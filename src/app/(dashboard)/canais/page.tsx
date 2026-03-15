@@ -154,6 +154,7 @@ export default function CanaisPage() {
             setSelectedProvider(instance?.provider as any);
             setQrCodeData(null);
             setConnectStep('connecting');
+            setIsSubmitting(true);
             setShowNewDrawer(true);
         }
 
@@ -195,6 +196,7 @@ export default function CanaisPage() {
             if (action !== 'logout') setShowNewDrawer(false);
         } finally {
             setActionLoading(prev => ({ ...prev, [instanceId]: false }));
+            setIsSubmitting(false);
         }
     };
 

@@ -79,7 +79,7 @@ export class UazAPIProvider implements IWhatsAppProvider {
             const res = await fetch(`${this.baseUrl}/instance/connect`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'token': this.token,
                 },
             });
@@ -109,9 +109,10 @@ export class UazAPIProvider implements IWhatsAppProvider {
                 headers: { 'token': this.token },
             });
             const data = await res.json();
+            const rawStatus = data.status || data.state;
             return {
-                state: data.state === 'open' ? 'connected' : (data.state || 'disconnected'),
-                qrCode: data.qrcode || data.qrCode,
+                state: (rawStatus === 'open' || rawStatus === 'connected') ? 'connected' : (rawStatus || 'disconnected'),
+                qrCode: data.qrcode || data.qrCode || data.instance?.qrcode,
                 phoneNumber: data.instance?.phone || data.phoneNumber,
             };
         } catch {
@@ -175,7 +176,10 @@ export class UazAPIProvider implements IWhatsAppProvider {
         try {
             const res = await fetch(`${this.baseUrl}/instance/logout`, {
                 method: 'POST',
-                headers: { 'token': this.token },
+                headers: {
+                    'Accept': 'application/json',
+                    'token': this.token
+                },
             });
             const data = await res.json();
             if (!res.ok) return { success: false, error: data.message || 'Falha ao desconectar' };
