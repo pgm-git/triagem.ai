@@ -26,11 +26,36 @@ export function SectorDrawer({ open, sector, onClose, onSave }: SectorDrawerProp
         priority: 0,
         schedule_start: '',
         schedule_end: '',
-        triggers: [],
         collection_fields: [],
     });
 
     const [newKeyword, setNewKeyword] = useState('');
+    const [channels, setChannels] = useState<{ id: string, name: string, phone?: string }[]>([]);
+    const [isLoadingChannels, setIsLoadingChannels] = useState(false);
+
+    useEffect(() => {
+        const fetchChannels = async () => {
+            setIsLoadingChannels(true);
+            try {
+                const res = await fetch('/api/channels');
+                if (res.ok) {
+                    const data = await res.json();
+                    setChannels(data.instances.map((i: any) => ({
+                        id: i.id,
+                        name: i.instance_name,
+                        phone: i.phone_number
+                    })));
+                }
+            } catch (err) {
+                console.error('Failed to load channels:', err);
+            } finally {
+                setIsLoadingChannels(false);
+            }
+        };
+        if (open) fetchChannels();
+    }, [open]);
+
+    const icons = ['📂', '💰', '🛠️', '📣', '🤝', '🚀', '⭐', '📱', '📧', '📍', '💡', '✅'];
 
     useEffect(() => {
         if (sector) {
@@ -56,6 +81,8 @@ export function SectorDrawer({ open, sector, onClose, onSave }: SectorDrawerProp
     const updateField = (field: string, value: string | boolean | number) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
+
+    const icons = ['📂', '💰', '🛠️', '📣', '🤝', '🚀', '⭐', '📱', '📧', '📍', '💡', '✅'];
 
     const updateTrigger = (updates: Partial<SectorTrigger>) => {
         const updated = { ...trigger, ...updates };
@@ -195,26 +222,51 @@ export function SectorDrawer({ open, sector, onClose, onSave }: SectorDrawerProp
 
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-300">Destino</label>
-                                <input
-                                    type="text"
+                                <select
                                     value={form.destination || ''}
                                     onChange={(e) => updateField('destination', e.target.value)}
-                                    placeholder="WhatsApp, email ou link"
                                     required
-                                    className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
-                                />
+                                    className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                                >
+                                    <option value="" disabled className="bg-slate-900">Selecione um canal...</option>
+                                    {channels.map((ch) => (
+                                        <option key={ch.id} value={ch.id} className="bg-slate-900">
+                                            {ch.name} {ch.phone ? `(${ch.phone})` : ''}
+                                        </option>
+                                    ))}
+                                    {channels.length === 0 && !isLoadingChannels && (
+                                        <option value="" disabled className="bg-slate-900">Nenhum canal ativo</option>
+                                    )}
+                                </select>
+                                {isLoadingChannels && <p className="text-[10px] text-blue-400 animate-pulse">Carregando canais...</p>}
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-slate-300">Ícone</label>
-                                    <input
-                                        type="text"
-                                        value={form.icon || ''}
-                                        onChange={(e) => updateField('icon', e.target.value)}
-                                        placeholder="Emoji"
-                                        className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
-                                    />
+                                    <div className="flex flex-wrap gap-2 p-2 bg-slate-800/30 border border-slate-700 rounded-lg">
+                                        {icons.map((emoji) => (
+                                            <button
+                                                key={emoji}
+                                                type="button"
+                                                onClick={() => updateField('icon', emoji)}
+                                                className={cn(
+                                                    "w-8 h-8 flex items-center justify-center rounded-md transition-all hover:bg-slate-700",
+                                                    form.icon === emoji ? "bg-blue-600 text-white" : "text-lg"
+                                                )}
+                                            >
+                                                {emoji}
+                                            </button>
+                                        ))}
+                                        <input
+                                            type="text"
+                                            value={icons.includes(form.icon || '') ? '' : form.icon || ''}
+                                            onChange={(e) => updateField('icon', e.target.value)}
+                                            placeholder="Emoji"
+                                            className="w-8 h-8 p-0 bg-transparent border-none text-center text-lg focus:outline-none placeholder:text-slate-600"
+                                            maxLength={2}
+                                        />
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-slate-300">Prioridade</label>
